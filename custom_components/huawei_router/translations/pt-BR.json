@@ -1,0 +1,138 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Configuração do roteador mesh Huawei.",
+                "data": {
+                    "name": "Nome da integração",
+                    "host": "Host",
+                    "port": "Porta",
+                    "username": "Nome de usuário",
+                    "password": "Senha",
+                    "ssl": "Usar SSL",
+                    "verify_ssl": "Verificar certificado SSL"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Este nome já está em uso.",
+            "auth_general": "Não é possível autenticar.",
+            "auth_invalid_csrf": "Erro CSRF, tente novamente.",
+            "auth_too_many_users": "Muitos usuários, aguarde algum tempo antes de tentar novamente.",
+            "auth_invalid_credentials": "Nome de usuário ou senha inválidos."
+        }
+    },
+    "options": {
+        "step": {
+            "basic_options": {
+                "data": {
+                    "scan_interval": "Intervalo de atualização"
+                },
+                "title": "Configuração do roteador mesh Huawei (1\/2)",
+                "description": "Opções básicas"
+            },
+            "features_select": {
+                "data": {
+                    "wifi_access_switches": "Interruptores de acesso Wi-Fi do dispositivo",
+                    "router_clients_sensors": "Número de dispositivos conectados para cada roteador",
+                    "devices_tags": "Tags do dispositivo",
+                    "device_tracker": "Rastreamento de dispositivos",
+                    "device_tracker_zones": "Zonas específicas do roteador para dispositivos rastreados",
+                    "port_mapping_switches": "Interruptores de encaminhamento de porta",
+                    "url_filter_switches": "Interruptores de filtragem de sites",
+                    "event_entities": "Entidades de eventos",
+                    "time_control_switches": "Interruptores de controle de tempo de acesso"
+                },
+                "title": "Configuração do roteador mesh Huawei (2\/2)",
+                "description": "Características adicionais"
+            }
+        }
+    },
+    "services": {
+        "whitelist_add": {
+            "name": "Adicionar à lista de permissões",
+            "description": "Adicionar o dispositivo especificado à lista de permissões Wi-Fi do roteador.",
+            "fields": {
+                "mac_address": {
+                    "name": "Endereço MAC",
+                    "description": "O endereço MAC do dispositivo conectado sem fio."
+                }
+            }
+        },
+        "blacklist_add": {
+            "name": "Adicionar à lista de bloqueios",
+            "description": "Adicionar o dispositivo especificado à lista de bloqueios Wi-Fi do roteador.",
+            "fields": {
+                "mac_address": {
+                    "name": "Endereço MAC",
+                    "description": "O endereço MAC do dispositivo conectado sem fio."
+                }
+            }
+        },
+        "whitelist_remove": {
+            "name": "Remover da lista de permissões",
+            "description": "Remover o dispositivo especificado da lista de permissões Wi-Fi do roteador.",
+            "fields": {
+                "mac_address": {
+                    "name": "Endereço MAC",
+                    "description": "O endereço MAC do dispositivo conectado sem fio."
+                }
+            }
+        },
+        "blacklist_remove": {
+            "name": "Remover da lista de bloqueios",
+            "description": "Remover o dispositivo especificado da lista de bloqueios Wi-Fi do roteador.",
+            "fields": {
+                "mac_address": {
+                    "name": "Endereço MAC",
+                    "description": "O endereço MAC do dispositivo conectado sem fio."
+                }
+            }
+        },
+        "guest_network_setup": {
+            "name": "Configurar uma rede de convidados",
+            "description": "Configurar os parâmetros da rede Wi-Fi para convidados.",
+            "fields": {
+                "serial_number": {
+                    "name": "Número de série do roteador",
+                    "description": "Número de série do roteador principal."
+                },
+                "enabled": {
+                    "name": "Habilitar rede de convidados",
+                    "description": "Habilitar ou desabilitar a rede Wi-Fi para convidados."
+                },
+                "ssid": {
+                    "name": "Nome do Wi-Fi",
+                    "description": "Nome da rede Wi-Fi para convidados."
+                },
+                "duration": {
+                    "name": "Duração do acesso",
+                    "description": "Duração do acesso à rede Wi-Fi para convidados."
+                },
+                "security": {
+                    "name": "Segurança",
+                    "description": "Segurança da rede Wi-Fi para convidados."
+                },
+                "password": {
+                    "name": "Senha do Wi-Fi",
+                    "description": "Senha para acessar a rede Wi-Fi para convidados."
+                }
+            }
+        }
+    },
+    "selector": {
+        "wifi_duration": {
+            "options": {
+                "four_hours": "4 horas",
+                "one_day": "1 dia",
+                "unlimited": "Ilimitado"
+            }
+        },
+        "wifi_security": {
+            "options": {
+                "encrypted": "Criptografado",
+                "open": "Aberto"
+            }
+        }
+    }
+}

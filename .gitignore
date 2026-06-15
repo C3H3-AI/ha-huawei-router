@@ -1,0 +1,151 @@
+# Temp files
+temp_*/
+temp/
+*.tmp
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.*
+.git-credentials
+
+# Workspace & IDE
+.trae/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# HA workspace directories (not part of this integration repo)
+memory/
+logs/
+scripts/
+skills/
+analysis/
+backups/
+docs/
+downloads/
+reports/
+artifacts/
+assets/
+config/
+services/
+shared/
+tools/
+workspaces/
+www/
+node_modules/
+package-temp/
+
+# Root temp/test files (one-off scripts)
+_check_*.py
+_chk*.py
+_import_test.py
+_parse_*.py
+_simulate*.py
+_test_*.py
+analyze_*.py
+check_*.py
+debug_*.py
+dump_*.py
+fix_*.py
+install_*.py
+list_*.py
+ping_*.py
+re*.py
+refresh_*.py
+set_*.py
+verify_*.py
+wait_*.py
+tmp_*.py
+reload_*.py
+recreat_*.py
+
+# HA integration development (not part of this repo)
+integrations/
+custom_components/hacs_vision/
+custom_components/claw_*/
+custom_components/cn_im_hub/
+custom_components/face_verify/
+custom_components/hassbox_store/
+
+# Config files
+core.json
+config.json
+repairs.json
+states*.json
+
+# Screenshots
+*.png
+*.jpg
+*.jpeg
+
+# Markdown workspace files
+AGENTS.md
+DREAMS.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+USER.md
+TOOLS.md
+MEMORY.md
+claw-*.md
+slac-*.md
+hacs_*.md
+task-*.md
+*.md.backup
+
+# Others
+*.tgz
+*.zip
+*.html
+claw_card_*
+enable-chrome-ai/
+ha-supervisor/
+heweather/
+heweather_extracted/
+lcm-*/
+ha_store.png
+
+# Extra workspace artifacts
+package.json
+package-lock.json
+node_modules/
+claw-dashboard-*.yaml
+memory-diary/
+tmp/
+ttemp/
+.openclaw/
+epson_merge_v1/
+*.yaml.backup
+ha_check_epson.py
+test_printer_conn.py
+install_*.py
+wait_*.py
+reload_*.py
+ping_*.py
+debug_*.py
+list_*.py
+dump_*.py
+
+# Date-stamped workspace notes
+*_202605*.md
+*_202606*.md

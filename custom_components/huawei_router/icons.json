@@ -1,0 +1,49 @@
+{
+  "services": {
+    "whitelist_add": "mdi:account-plus-outline",
+    "blacklist_remove": "mdi:account-minus",
+    "blacklist_add": "mdi:account-plus",
+    "whitelist_remove": "mdi:account-minus-outline",
+    "guest_network_setup": "mdi:wifi-cog"
+  },
+  "entity": {
+    "binary_sensor": {
+      "device_tracker": {
+        "default": "mdi:router-wireless"
+      },
+      "internet": {
+        "default": "mdi:internet"
+      }
+    },
+    "sensor": {
+      "download_speed": {
+        "default": "mdi:download"
+      },
+      "upload_speed": {
+        "default": "mdi:upload"
+      },
+      "signal_strength": {
+        "default": "mdi:signal"
+      },
+      "device_count": {
+        "default": "mdi:devices"
+      }
+    },
+    "switch": {
+      "wifi": {
+        "default": "mdi:wifi"
+      },
+      "guest_wifi": {
+        "default": "mdi:wifi"
+      },
+      "port_mapping": {
+        "default": "mdi:network"
+      }
+    },
+    "button": {
+      "reboot": {
+        "default": "mdi:restart"
+      }
+    }
+  }
+}

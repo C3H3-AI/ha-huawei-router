@@ -1,0 +1,181 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Huawei mesh router setup.",
+                "data": {
+                    "name": "Integration name",
+                    "host": "Host",
+                    "port": "Port",
+                    "username": "Username",
+                    "password": "Password",
+                    "ssl": "Use SSL",
+                    "verify_ssl": "Verify SSL cert"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "This name is already used.",
+            "auth_general": "Can not authenticate.",
+            "auth_invalid_csrf": "CSRF error, try again.",
+            "auth_too_many_users": "Too many users, wait some time before retry.",
+            "auth_invalid_credentials": "Invalid username or password."
+        }
+    },
+    "entity": {
+        "sensor": {
+            "wan_status": {
+                "name": "WAN Status"
+            },
+            "wan_ip": {
+                "name": "WAN IP Address"
+            },
+            "wan_ipv6": {
+                "name": "WAN IPv6 Address"
+            },
+            "wan_download": {
+                "name": "WAN Download"
+            },
+            "wan_upload": {
+                "name": "WAN Upload"
+            },
+            "received_data": {
+                "name": "Received Data"
+            },
+            "sent_data": {
+                "name": "Sent Data"
+            },
+            "packets_received": {
+                "name": "Packets Received"
+            },
+            "packets_sent": {
+                "name": "Packets Sent"
+            },
+            "download_speed": {
+                "name": "Download Speed"
+            },
+            "upload_speed": {
+                "name": "Upload Speed"
+            },
+            "packet_download_speed": {
+                "name": "Packet Download Speed"
+            },
+            "packet_upload_speed": {
+                "name": "Packet Upload Speed"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "basic_options": {
+                "data": {
+                    "scan_interval": "Update interval"
+                },
+                "title": "Huawei mesh router setup (1\/2)",
+                "description": "Basic options"
+            },
+            "features_select": {
+                "data": {
+                    "wifi_access_switches": "Device Wi-Fi Access switches",
+                    "router_clients_sensors": "Number of connected devices for each router",
+                    "devices_tags": "Device tags",
+                    "device_tracker": "Devices tracking",
+                    "device_tracker_zones": "Router-specific zones for tracked devices",
+                    "port_mapping_switches": "Port forwarding switches",
+                    "url_filter_switches": "Website filtering switches",
+                    "event_entities": "Event entities",
+                    "time_control_switches": "Access time control switches"
+                },
+                "title": "Huawei mesh router setup (2\/2)",
+                "description": "Additional features"
+            }
+        }
+    },
+    "services": {
+        "whitelist_add": {
+            "name": "Add to whitelist",
+            "description": "Add the specified device to the router's Wi-Fi whitelist.",
+            "fields": {
+                "mac_address": {
+                    "name": "MAC Address",
+                    "description": "The MAC address of wireless connected device."
+                }
+            }
+        },
+        "blacklist_add": {
+            "name": "Add to blacklist",
+            "description": "Add the specified device to the router's Wi-Fi blacklist.",
+            "fields": {
+                "mac_address": {
+                    "name": "MAC Address",
+                    "description": "The MAC address of wireless connected device."
+                }
+            }
+        },
+        "whitelist_remove": {
+            "name": "Remove from whitelist",
+            "description": "Remove the specified device from the router's Wi-Fi whitelist.",
+            "fields": {
+                "mac_address": {
+                    "name": "MAC Address",
+                    "description": "The MAC address of wireless connected device."
+                }
+            }
+        },
+        "blacklist_remove": {
+            "name": "Remove from blacklist",
+            "description": "Remove the specified device from the router's Wi-Fi blacklist.",
+            "fields": {
+                "mac_address": {
+                    "name": "MAC Address",
+                    "description": "The MAC address of wireless connected device."
+                }
+            }
+        },
+        "guest_network_setup": {
+            "name": "Set up a guest network",
+            "description": "Configure the parameters of the guest Wi-Fi network.",
+            "fields": {
+                "serial_number": {
+                    "name": "Router serial number",
+                    "description": "Serial number of the primary router."
+                },
+                "enabled": {
+                    "name": "Enable guest network",
+                    "description": "Enable or disable guest Wi-Fi network."
+                },
+                "ssid": {
+                    "name": "Wi-Fi name",
+                    "description": "Name of the guest Wi-Fi network."
+                },
+                "duration": {
+                    "name": "Access duration",
+                    "description": "Duration of access to the guest Wi-Fi network."
+                },
+                "security": {
+                    "name": "Security",
+                    "description": "Guest Wi-Fi network security."
+                },
+                "password": {
+                    "name": "Wi-Fi password",
+                    "description": "Password to access the guest Wi-Fi network."
+                }
+            }
+        }
+    },
+    "selector": {
+        "wifi_duration": {
+            "options": {
+                "four_hours": "4 hours",
+                "one_day": "1 day",
+                "unlimited": "Unlimited"
+            }
+        },
+        "wifi_security": {
+            "options": {
+                "encrypted": "Encrypted",
+                "open": "Open"
+            }
+        }
+    }
+}

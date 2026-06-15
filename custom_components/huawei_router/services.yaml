@@ -1,0 +1,77 @@
+# Describes the format for available component services
+
+whitelist_add:
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+
+blacklist_add:
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+
+whitelist_remove:
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+
+blacklist_remove:
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+
+guest_network_setup:
+  fields:
+    serial_number:
+      required: true
+      selector:
+        text:
+    enabled:
+      required: true
+      example: true
+      default: true
+      selector:
+        boolean:
+    ssid:
+      required: true
+      example: "MyGuestWiFi"
+      selector:
+        text:
+    duration:
+      required: true
+      example: "four_hours"
+      default: "four_hours"
+      selector:
+        select:
+          translation_key: "wifi_duration"
+          options:
+            - "four_hours"
+            - "one_day"
+            - "unlimited"
+    security:
+      required: true
+      example: "encrypted"
+      default: "encrypted"
+      selector:
+        select:
+          translation_key: "wifi_security"
+          options:
+            - "encrypted"
+            - "open"
+    password:
+      required: true
+      example: "K3k*eJWtFv!~ME4}"
+      selector:
+        text:
