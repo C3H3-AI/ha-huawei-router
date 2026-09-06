@@ -131,7 +131,14 @@ def generate_entity_unique_id(
     device_mac: MAC_ADDR | None = None,
 ) -> str:
     prefix = coordinator.unique_id
-    suffix = (
-        coordinator.get_router_info().serial_number if not device_mac else device_mac
-    )
+    if device_mac:
+
+        suffix = device_mac
+
+    else:
+
+        router_info = coordinator.get_router_info()
+
+        suffix = router_info.serial_number if router_info else "unknown"
+
     return f"{prefix}_{function_uid}_{suffix.lower()}"

@@ -892,13 +892,15 @@ class HuaweiApi:
 
         existing_item = next(
 
-            (item for item in actual if item.filter_id == url_filter_info.filter_id)
+            (item for item in actual if item.filter_id == url_filter_info.filter_id),
+
+            None,
 
         )
 
 
 
-        action: str = "update" if existing_item else "create"
+        action: str = "update" if existing_item is not None else "create"
 
 
 

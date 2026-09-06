@@ -8,6 +8,8 @@ import logging
 
 import voluptuous as vol
 
+from homeassistant.helpers import config_validation as cv
+
 
 
 from homeassistant.config_entries import ConfigFlow, FlowResult, OptionsFlow
@@ -60,6 +62,9 @@ from .const import (
     DEFAULT_VERIFY_SSL,
     DEFAULT_WIFI_ACCESS_SWITCHES,
     DEFAULT_AUTO_ASSOCIATE_DEVICES,
+    DEFAULT_DEVICE_SENSOR_GROUPS,
+    DEVICE_SENSOR_GROUP_OPTIONS,
+    OPT_DEVICE_SENSOR_GROUPS,
     DOMAIN,
     OPT_DEVICE_TRACKER,
     OPT_DEVICE_TRACKER_ZONES,
@@ -387,6 +392,18 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
             data_schema=vol.Schema(
 
                 {
+
+                    vol.Required(
+
+                        OPT_DEVICE_SENSOR_GROUPS,
+
+                        default=self.options.get(
+
+                            OPT_DEVICE_SENSOR_GROUPS, DEFAULT_DEVICE_SENSOR_GROUPS
+
+                        ),
+
+                    ): cv.multi_select(DEVICE_SENSOR_GROUP_OPTIONS),
 
                     vol.Required(
 

@@ -135,6 +135,8 @@ from .utils import (
 
 
 
+_LOGGER = logging.getLogger(__name__)
+
 _PRIMARY_ROUTER_IDENTITY: Final = "primary_router"
 
 
@@ -614,6 +616,7 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         self._is_repeater: bool = False
         self._sonoff_storage_cache: dict[str, str] | None = None
         self._sonoff_cache_tick: int = 0
+        self._associate_tick: int = 0
 
         self._integration_options: HuaweiIntegrationOptions = integration_options
 
@@ -644,6 +647,12 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
             else None
 
         )
+
+        # Zone list is only populated by _update_zones when the zones option is
+        # enabled; keep it initialized so diagnostics and device updates never
+        # hit an AttributeError.
+
+        self._zones: list[ZoneInfo] = []
 
 
 
@@ -1045,7 +1054,10 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
         await self._update_connected_devices()
 
-        await self._auto_associate_devices()
+        # 设备注册表关联开销大(全量扫描实体注册表),降频到每 5 轮执行一次
+        self._associate_tick += 1
+        if self._is_initial_update or self._associate_tick % 5 == 1:
+            await self._auto_associate_devices()
 
         await self._update_apis()
 
@@ -1272,7 +1284,7 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
 
 
-        self._zones = list(sorted(get_zones(), key=lambda zone: zone.name))
+        self._zones = list(sorted(get_zones(), key=lambda zone: zone.name or ""))
 
 
 
@@ -2487,6 +2499,10 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
             filter_item = self._url_filters.get(switch_id)
 
+            if filter_item is None:
+
+                raise CoordinatorError(f"URL filter {switch_id} is not found")
+
             if filter_item.enabled == state:
 
                 return
@@ -2529,6 +2545,10 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
             port_mapping = self._port_mappings.get(switch_id)
 
+            if port_mapping is None:
+
+                raise CoordinatorError(f"Port mapping {switch_id} is not found")
+
             if port_mapping.enabled == state:
 
                 return
@@ -2560,6 +2580,10 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 )
 
             time_control = self._time_control_items.get(switch_id)
+
+            if time_control is None:
+
+                raise CoordinatorError(f"Time control item {switch_id} is not found")
 
             if time_control.enabled == state:
 

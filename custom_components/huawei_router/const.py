@@ -45,6 +45,18 @@ OPT_EVENT_ENTITIES = "event_entities"
 OPT_TIME_CONTROL_SWITCHES = "time_control_switches"
 OPT_SKIP_OFFLINE_DEVICES = "skip_offline_devices"
 OPT_AUTO_ASSOCIATE_DEVICES = "auto_associate_devices"
+OPT_DEVICE_SENSOR_GROUPS = "device_sensor_groups"
+
+# 设备级传感器分组:控制每台设备生成哪些实体
+DEVICE_SENSOR_GROUP_OPTIONS: Final = {
+    "core": "基础(IP/MAC/连接类型/连接至)",
+    "signal": "信号(信号强度/WiFi频段)",
+    "speed": "实时速率(上传/下载速度)",
+    "traffic": "流量统计(发送/接收/连接速率)",
+    "info": "设备信息(厂商/类型/在线时长/家长控制)",
+}
+DEFAULT_DEVICE_SENSOR_GROUPS: Final = ["core", "signal", "speed", "traffic", "info"]
+MIN_SCAN_INTERVAL: Final = 10
 
 
 

@@ -786,7 +786,12 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
 
 
-    @verify_domain_control(DOMAIN)
+    try:
+        _service_decorator = verify_domain_control(DOMAIN)
+    except TypeError:  # HA < 2026.x requires hass
+        _service_decorator = verify_domain_control(hass, DOMAIN)
+
+    @_service_decorator
 
     async def async_call_service(service: ServiceCall) -> None:
 

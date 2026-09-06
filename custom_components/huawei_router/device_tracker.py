@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.device_tracker.config_entry import ScannerEntity
+try:
+    from homeassistant.components.device_tracker.entity import ScannerEntity
+except ImportError:  # HA < 2025.x
+    from homeassistant.components.device_tracker.config_entry import ScannerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback

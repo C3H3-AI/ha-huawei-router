@@ -16,6 +16,8 @@ from .const import (
     DEFAULT_ROUTER_CLIENTS_SENSORS,
     DEFAULT_EVENT_ENTITIES,
     DEFAULT_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+    DEFAULT_DEVICE_SENSOR_GROUPS,
     DEFAULT_SKIP_OFFLINE_DEVICES,
     DEFAULT_TIME_CONTROL_SWITCHES,
     DEFAULT_URL_FILTER_SWITCHES,
@@ -32,6 +34,7 @@ from .const import (
     OPT_URL_FILTER_SWITCHES,
     OPT_WIFI_ACCESS_SWITCHES,
     OPT_AUTO_ASSOCIATE_DEVICES,
+    OPT_DEVICE_SENSOR_GROUPS,
 )
 
 
@@ -78,9 +81,19 @@ class HuaweiIntegrationOptions:
 
         """Return option 'update interval' value"""
 
-        return get_option(self._config_entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        # 钳制最小刷新间隔,防止过低频率对路由器造成请求风暴
+        return max(MIN_SCAN_INTERVAL, get_option(self._config_entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
 
 
+
+    @property
+    def device_sensor_groups(self) -> list[str]:
+        """Return option 'device sensor groups' value"""
+        return get_option(
+            self._config_entry,
+            OPT_DEVICE_SENSOR_GROUPS,
+            DEFAULT_DEVICE_SENSOR_GROUPS,
+        )
 
     @property
 

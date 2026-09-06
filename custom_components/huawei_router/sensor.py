@@ -438,7 +438,7 @@ async def async_setup_entry(
                     translation_key="wan_download",
                     function_uid="sensor_wan_download_speed",
                     function_name="WAN下载",
-                    native_unit_of_measurement="Kbps",
+                    native_unit_of_measurement="kB/s",
                     state_class=SensorStateClass.MEASUREMENT,
                     suggested_display_precision=1,
                     device_mac=None,
@@ -457,7 +457,7 @@ async def async_setup_entry(
                     translation_key="wan_upload",
                     function_uid="sensor_wan_upload_speed",
                     function_name="WAN上传",
-                    native_unit_of_measurement="Kbps",
+                    native_unit_of_measurement="kB/s",
                     state_class=SensorStateClass.MEASUREMENT,
                     suggested_display_precision=1,
                     device_mac=None,
@@ -485,6 +485,11 @@ def watch_for_additional_routers(
     watcher: ActiveRoutersWatcher = ActiveRoutersWatcher(coordinator)
     skip_offline = integration_options.skip_offline_devices
     predicate = (lambda d: d.is_active and not d.is_router) if skip_offline else (lambda d: not d.is_router)
+
+    # 设备级传感器分组开关(选项控制实体生成数量)
+    _enabled_groups = set(integration_options.device_sensor_groups)
+    def _groups_enabled(*names: str) -> bool:
+        return any(n in _enabled_groups for n in names)
     all_watcher: HuaweiConnectedDevicesWatcher = HuaweiConnectedDevicesWatcher(
         coordinator, predicate
     )
@@ -496,7 +501,6 @@ def watch_for_additional_routers(
         for mac, device in coordinator.connected_devices.items():
             if device.is_router or device.is_active:
                 continue
-            prefix = f"{coordinator.unique_id}_"
             for entity_entry in list(er.entities.values()):
                 if entity_entry.platform == DOMAIN and mac.lower().replace(':', '_') in entity_entry.unique_id.lower():
                     er.async_remove(entity_entry.entity_id)
@@ -559,7 +563,7 @@ def watch_for_additional_routers(
             new_entities.append(entity)
             _LOGGER.debug("  Added client sensor for %s", router.name)
 
-        if not known_uptime_sensors.get(mac):
+        if _groups_enabled("info") and not known_uptime_sensors.get(mac):
             uptime_data = coordinator.get_device_uptime(mac)
             if uptime_data is not None:
                 description = HuaweiUptimeSensorEntityDescription(
@@ -597,7 +601,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create grouped sensor for %s: %s", router.name, ex)
 
         # 为子路由器添加 IP 传感器
-        if not known_ip_sensors.get(mac):
+        if _groups_enabled("core") and not known_ip_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_ip",
@@ -617,7 +621,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create IP sensor for %s: %s", router.name, ex)
         
         # 为子路由器添加 MAC 地址传感器
-        if not known_mac_sensors.get(mac):
+        if _groups_enabled("core") and not known_mac_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_mac",
@@ -637,7 +641,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create MAC sensor for %s: %s", router.name, ex)
         
         # 为设备添加连接类型传感器
-        if not known_connection_type_sensors.get(mac):
+        if _groups_enabled("core") and not known_connection_type_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connection_type",
@@ -657,7 +661,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create connection type sensor for %s: %s", router.name, ex)
         
         # 为设备添加信号强度传感器
-        if not known_signal_sensors.get(mac):
+        if _groups_enabled("signal") and not known_signal_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_signal",
@@ -677,7 +681,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create signal sensor for %s: %s", router.name, ex)
         
         # 为设备添加上传速度传感器
-        if not known_upload_speed_sensors.get(mac):
+        if _groups_enabled("speed") and not known_upload_speed_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_upload_speed",
@@ -697,7 +701,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create upload speed sensor for %s: %s", router.name, ex)
         
         # 为设备添加下载速度传感器
-        if not known_download_speed_sensors.get(mac):
+        if _groups_enabled("speed") and not known_download_speed_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_download_speed",
@@ -717,7 +721,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create download speed sensor for %s: %s", router.name, ex)
         
         # 连接速率
-        if not known_connection_rate_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_connection_rate_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connection_rate",
@@ -736,7 +740,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create connection rate sensor: %s", ex)
         
         # WiFi频段
-        if not known_frequency_sensors.get(mac):
+        if _groups_enabled("signal") and not known_frequency_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_frequency",
@@ -755,7 +759,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create frequency sensor: %s", ex)
         
         # 设备厂商
-        if not known_brands_sensors.get(mac):
+        if _groups_enabled("info") and not known_brands_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_dev_brands",
@@ -774,7 +778,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create brands sensor: %s", ex)
         
         # 设备类型
-        if not known_type_sensors.get(mac):
+        if _groups_enabled("info") and not known_type_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_icon_type",
@@ -793,7 +797,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create type sensor: %s", ex)
         
         # 发送流量
-        if not known_tx_data_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_tx_data_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_tx_data",
@@ -812,7 +816,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create tx data sensor: %s", ex)
         
         # 接收流量
-        if not known_rx_data_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_rx_data_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_rx_data",
@@ -831,7 +835,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create rx data sensor: %s", ex)
         
         # 家长控制
-        if not known_parent_control_sensors.get(mac):
+        if _groups_enabled("info") and not known_parent_control_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_parent_control",
@@ -850,7 +854,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create parent control sensor: %s", ex)
         
         # 连接至（路由器）
-        if not known_connected_via_sensors.get(mac):
+        if _groups_enabled("core") and not known_connected_via_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connected_via",
@@ -878,7 +882,7 @@ def watch_for_additional_routers(
         new_entities = []
         _LOGGER.debug("on_device_added: mac=%s, name=%s", mac, device.name)
 
-        if not known_ip_sensors.get(mac):
+        if _groups_enabled("core") and not known_ip_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_ip",
@@ -896,7 +900,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create IP sensor for %s: %s", device.name, ex)
 
-        if not known_mac_sensors.get(mac):
+        if _groups_enabled("core") and not known_mac_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_mac",
@@ -914,7 +918,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create MAC sensor for %s: %s", device.name, ex)
 
-        if not known_connection_type_sensors.get(mac):
+        if _groups_enabled("core") and not known_connection_type_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connection_type",
@@ -932,7 +936,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create connection type for %s: %s", device.name, ex)
 
-        if not known_signal_sensors.get(mac):
+        if _groups_enabled("signal") and not known_signal_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_signal",
@@ -950,7 +954,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create signal for %s: %s", device.name, ex)
 
-        if not known_upload_speed_sensors.get(mac):
+        if _groups_enabled("speed") and not known_upload_speed_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_upload_speed",
@@ -968,7 +972,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create upload speed for %s: %s", device.name, ex)
 
-        if not known_download_speed_sensors.get(mac):
+        if _groups_enabled("speed") and not known_download_speed_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_download_speed",
@@ -986,7 +990,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create download speed for %s: %s", device.name, ex)
 
-        if not known_connection_rate_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_connection_rate_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connection_rate",
@@ -1004,7 +1008,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create connection rate for %s: %s", device.name, ex)
 
-        if not known_frequency_sensors.get(mac):
+        if _groups_enabled("signal") and not known_frequency_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_frequency",
@@ -1022,7 +1026,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create frequency for %s: %s", device.name, ex)
 
-        if not known_brands_sensors.get(mac):
+        if _groups_enabled("info") and not known_brands_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_dev_brands",
@@ -1040,7 +1044,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create brands for %s: %s", device.name, ex)
 
-        if not known_type_sensors.get(mac):
+        if _groups_enabled("info") and not known_type_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_icon_type",
@@ -1058,7 +1062,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create type for %s: %s", device.name, ex)
 
-        if not known_tx_data_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_tx_data_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_tx_data",
@@ -1076,7 +1080,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create tx data for %s: %s", device.name, ex)
 
-        if not known_rx_data_sensors.get(mac):
+        if _groups_enabled("traffic") and not known_rx_data_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_rx_data",
@@ -1094,7 +1098,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create rx data for %s: %s", device.name, ex)
 
-        if not known_parent_control_sensors.get(mac):
+        if _groups_enabled("info") and not known_parent_control_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_parent_control",
@@ -1112,7 +1116,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create parent control for %s: %s", device.name, ex)
 
-        if not known_connected_via_sensors.get(mac):
+        if _groups_enabled("core") and not known_connected_via_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_connected_via",
@@ -1194,7 +1198,7 @@ class HuaweiSensor(CoordinatorEntity[HuaweiDataUpdateCoordinator], SensorEntity)
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(self.entity_description.device_mac)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(self.entity_description.device_mac)
 
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
@@ -1224,8 +1228,8 @@ class HuaweiUptimeSensor(HuaweiSensor):
     def available(self) -> bool:
         """Return if entity is available."""
         if self.entity_description.device_mac is None:
-            return self.coordinator.is_router_online(None)
-        return self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
+            return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1294,8 +1298,8 @@ class HuaweiConnectedDevicesSensor(HuaweiSensor):
     def available(self) -> bool:
         """Return if entity is available."""
         if self.entity_description.device_mac is None:
-            return self.coordinator.is_router_online(None)
-        return self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
+            return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1360,7 +1364,7 @@ class HuaweiConnectedDevicesSensor(HuaweiSensor):
         if tags_enabled:
             for tag, count in tagged_devices.items():
                 self._attr_extra_state_attributes[f"tagged_{tag}_clients"] = count
-            self._attr_extra_state_attributes[f"untagged_clients"] = untagged_clients
+            self._attr_extra_state_attributes["untagged_clients"] = untagged_clients
 
         super()._handle_coordinator_update()
 
@@ -1434,8 +1438,8 @@ class HuaweiGroupedDevicesSensor(HuaweiSensor):
     def available(self) -> bool:
         """Return if entity is available."""
         if self.entity_description.device_mac is None:
-            return self.coordinator.is_router_online(None)
-        return self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
+            return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(self.entity_description.device_mac) or self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1493,7 +1497,7 @@ class HuaweiWanStatusSensor(HuaweiSensor):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1527,7 +1531,7 @@ class HuaweiRouterInfoSensor(HuaweiSensor):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(self.entity_description.device_mac)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(self.entity_description.device_mac)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1597,7 +1601,7 @@ class HuaweiWanIpSensor(HuaweiSensor):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1625,7 +1629,7 @@ class HuaweiDeviceIpSensor(HuaweiSensor):
         if device_mac:
             device = self.coordinator.connected_devices.get(device_mac)
             return device is not None and device.is_active
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -1659,7 +1663,7 @@ class HuaweiDeviceMacSensor(HuaweiSensor):
         if device_mac:
             device = self.coordinator.connected_devices.get(device_mac)
             return device is not None and device.is_active
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -2078,12 +2082,17 @@ class HuaweiDeviceConnectedViaSensor(HuaweiSensor):
 class HuaweiWanIpv6Sensor(HuaweiSensor):
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: str | None = None
-    _attr_extra_state_attributes: dict = {}
+    _attr_extra_state_attributes: dict
+
+
+    def __init__(self, coordinator, description):
+        super().__init__(coordinator, description)
+        self._attr_extra_state_attributes = {}
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -2113,7 +2122,7 @@ class HuaweiWanSpeedSensor(HuaweiSensor):
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return self.coordinator.is_router_online(None)
+        return self.coordinator.last_update_success and self.coordinator.is_router_online(None)
 
     @callback
     def _handle_coordinator_update(self) -> None:
