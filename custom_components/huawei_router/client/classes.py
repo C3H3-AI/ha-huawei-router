@@ -922,7 +922,7 @@ class HuaweiClientDevice:
         phone_patterns = ["p60", "p70", "p80", "p90", "mate ", "nova ", "honor ", "pixel", "iphone", "ipad", "galaxy", "redmi", "xiaomi ", "oppo ", "vivo ", "pad", "phone"]
         if any(pattern in combined_name for pattern in phone_patterns):
             return False
-        router_patterns = ["ws-", "ws8000", "ws8500", "q6", "凌霄", "ax3", "ax6", "ax3pro", "tc7102", "tc7206"]
+        router_patterns = ["ws-", "ws8000", "ws8500", "q6", "凌霄", "ax2", "ax3", "ax6", "ax3pro", "tc7102", "tc7206", "ws7100", "ws7200", "ws7206", "ws8100", "ws8800"]
         if any(pattern in combined_name for pattern in router_patterns):
             return True
         return False
