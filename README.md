@@ -1,4 +1,4 @@
-# Huawei Q6 Router — Home Assistant 自定义集成
+# Huawei Router — Home Assistant 自定义集成
 
 [![HACS Default](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 [![License](https://img.shields.io/github/license/C3H3-AI/ha-huawei-q6)](https://github.com/C3H3-AI/ha-huawei-q6/blob/main/LICENSE.md)
