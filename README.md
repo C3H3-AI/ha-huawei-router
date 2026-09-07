@@ -1,9 +1,9 @@
 # Huawei Router — Home Assistant 自定义集成
 
 [![HACS Default](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
-[![License](https://img.shields.io/github/license/C3H3-AI/ha-huawei-q6)](https://github.com/C3H3-AI/ha-huawei-q6/blob/main/LICENSE.md)
+[![License](https://img.shields.io/github/license/C3H3-AI/ha-huawei-router)](https://github.com/C3H3-AI/ha-huawei-router/blob/main/LICENSE.md)
 
-深度集成华为凌霄 Q6 系列路由器（含网线版、子母路由等 Mesh 网络），支持设备跟踪、流量监控、WiFi 管理、端口映射、时间控制等完整功能。
+深度集成华为凌霄系列路由器（Q6 / Q7 / BE3 等，含网线版、子母路由等 Mesh 网络），支持设备跟踪、流量监控、WiFi 管理、端口映射、时间控制等完整功能。
 
 ## 支持的设备
 
@@ -13,8 +13,10 @@
 | 华为 Q6/7 子路由 | Mesh 子路由 | ✅ 自动发现 |
 | 华为 be3         |              | ✅ 已测试 |
 | 华为 Q6 WiFi 版 | Mesh 主路由 | ⚠️ 理论兼容 |
+| 华为 Q7 系列 | Mesh 主路由 | ✅ 社区用户测试通过 |
+| 华为 BE3 系列 (WiFi 7) | Mesh 主路由 | ✅ 社区用户测试通过 |
 
-> 其他华为凌霄/HiLink 路由器也可尝试使用。
+> 其他华为凌霄/HiLink 路由器也可尝试使用。不支持的接口（如 NFC、家长控制）会被自动识别并跳过，不影响其他功能。
 
 ---
 
@@ -34,29 +36,31 @@
 | WAN 状态 | 互联网连接是否在线 |
 | WAN IP 地址 | 公网 IPv4 地址 |
 | WAN IPv6 地址 | 公网 IPv6 地址（含前缀长度） |
-| WAN 下载/上传 | 当前 WAN 实时速率（Kbps） |
+| WAN 下载/上传 | 当前 WAN 实时速率（kB/s） |
 | UPnP 流量 | 已收/已发流量、已收/已发数据包、实时上下传速度 |
 | 路由器 IP 地址 | 主路由 LAN 口 IP |
 | 型号/序列号 | 路由器硬件信息 |
 | 软件/硬件/HarmonyOS 版本 | 固件版本信息 |
 | MAC 地址 | 主路由器 MAC 地址 |
 
-#### 设备级传感器（每个连接设备）
-| 实体 | 说明 |
-|------|------|
-| IP 地址 | 设备当前分配的局域网 IP |
-| MAC 地址 | 设备物理地址 |
-| 连接类型 | 有线/WiFi 2.4G/WiFi 5G |
-| 信号强度 | WiFi 信号 dBm 值 |
-| 上传/下载速度 | 设备实时上下传速率（kB/s） |
-| 连接速率 | WiFi 连接速率（Mbps） |
-| WiFi 频段 | 2.4GHz / 5GHz |
-| 设备厂商 | 设备品牌识别 |
-| 设备类型 | 设备分类（手机/PC/平板等） |
-| 发送/接收流量 | 设备累计收发流量 |
-| 家长控制 | 设备是否在家长控制下 |
-| 连接至 | 设备连接到哪个路由器 |
-| 运行时长 | 设备在线时长（时间戳+秒数） |
+#### 设备级传感器（每个连接设备，按分组可控）
+| 实体 | 说明 | 分组 |
+|------|------|------|
+| IP 地址 | 设备当前分配的局域网 IP | 基础 |
+| MAC 地址 | 设备物理地址 | 基础 |
+| 连接类型 | 有线/WiFi 2.4G/WiFi 5G | 基础 |
+| 连接至 | 设备连接到哪个路由器 | 基础 |
+| 信号强度 | WiFi 信号 dBm 值 | 信号 |
+| WiFi 频段 | 2.4GHz / 5GHz | 信号 |
+| 上传/下载速度 | 设备实时上下传速率（kB/s） | 实时速率 |
+| 连接速率 | WiFi 连接速率（Mbps） | 流量统计 |
+| 发送/接收流量 | 设备累计收发流量 | 流量统计 |
+| 设备厂商 | 设备品牌识别 | 设备信息 |
+| 设备类型 | 设备分类（手机/PC/平板等） | 设备信息 |
+| 运行时长 | 设备在线时长（时间戳+秒数） | 设备信息 |
+| 家长控制 | 设备是否在家长控制下 | 设备信息 |
+
+> **实体太多？** 在集成的"配置"中取消勾选不需要的分组即可。设备较多时建议只保留"基础"+"信号"+"实时速率"。
 
 #### 子路由传感器（每个子路由器）
 | 实体 | 说明 |
@@ -71,7 +75,6 @@
 ---
 
 ### 2. 开关（Switches）
-
 | 开关 | 说明 |
 |------|------|
 | **NFC** | 华为一碰连（HiConnect）的 NFC 功能开关 |
@@ -87,7 +90,6 @@
 ---
 
 ### 3. 按键（Buttons）
-
 | 按键 | 说明 |
 |------|------|
 | **重启** | 主路由重启按键 |
@@ -98,7 +100,6 @@
 ---
 
 ### 4. 二进制传感器（Binary Sensors）
-
 | 实体 | 说明 |
 |------|------|
 | **互联网连接** | WAN 是否在线（绿色=连接，灰色=断开） |
@@ -106,7 +107,6 @@
 ---
 
 ### 5. 选择器（Selects）
-
 | 选择器 | 说明 |
 |------|------|
 | **WiFi 访问控制模式** | 黑白名单切换 |
@@ -115,7 +115,6 @@
 ---
 
 ### 6. 设备追踪（Device Tracker）
-
 开启后，每个连接设备自动出现在 Home Assistant 的设备列表中，支持：
 - 显示设备当前位置
 - Zone 自动化（到家/离家触发）
@@ -124,7 +123,6 @@
 ---
 
 ### 7. 事件（Events）
-
 | 事件 | 触发条件 |
 |------|----------|
 | **路由器** | 子路由上线 / 下线 |
@@ -135,9 +133,7 @@
 ---
 
 ### 8. 服务（Services）
-
 通过开发者工具 → 服务调用：
-
 | 服务 | 说明 |
 |------|------|
 | `huawei_router.whitelist_add` | 添加设备 MAC 到白名单 |
@@ -149,11 +145,9 @@
 ---
 
 ## Sonoff 设备自动关联（核心技术实现）
-
 本集成提供**智能设备合并**功能，自动将华为路由器发现的设备与 Sonoff/eWeLink 集成的设备关联合并，实现统一设备管理。
 
 ### 功能概述
-
 当同时安装了 **Sonoff 集成** 和 **华为路由器集成** 时：
 - Sonoff 设备卡片上会同时显示 Sonoff 的开关/传感器 + 华为路由器的 WiFi 开关和设备追踪
 - 避免同一物理设备在 Home Assistant 中显示为两个独立设备
@@ -161,114 +155,30 @@
 ### 技术实现原理
 
 #### 1. 双数据源设计
-
 | 数据源 | 优先级 | 获取方式 | 说明 |
 |--------|--------|----------|------|
 | `hass.data['sonoff']` | 高 | 运行时内存读取 | 从 Sonoff 集成实时获取 device_id → IP 映射，零 IO 开销 |
 | `/config/.storage/sonoff/*.json` | 低 | 文件读取 | 回退数据源，定期缓存（20次更新周期） |
 
-**代码实现**：[update_coordinator.py#L2662-L2759](file:///D:/ai-hub/integrations/huawei_router/custom_components/huawei_router/update_coordinator.py#L2662-L2759)
-
 #### 2. 关联匹配流程
-
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Sonoff 自动关联流程                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  1. 构建 IP → MAC 映射表                                         │
-│     从华为路由器 connected_devices 获取所有在线设备的 IP 和 MAC    │
+│  1. 获取 Sonoff device_id → IP 映射                             │
+│     ├── 优先: hass.data['sonoff'] 内存数据                      │
+│     └── 回退: /config/.storage/sonoff/*.json                   │
 │                                                                 │
-│  2. 获取 Sonoff device_id → IP 映射                              │
-│     优先从 hass.data['sonoff'] 获取（实时）                       │
-│     若失败则从存储文件读取（回退）                                 │
+│  2. 通过 IP 找到华为路由器侧的设备 MAC                           │
+│     └── IP → MAC 匹配(connected_devices)                        │
 │                                                                 │
-│  3. IP 桥接匹配                                                  │
-│     Sonoff device_id → IP → MAC → 华为路由器设备                  │
-│                                                                 │
-│  4. 设备合并操作                                                 │
-│     - 更新 Sonoff 设备的 connections，添加 MAC                   │
-│     - 将华为路由器实体迁移到 Sonoff 设备                          │
-│     - 合并 identifiers，保留华为路由器标识                        │
-│     - 删除空的华为路由器设备                                      │
-│     - 恢复 Sonoff 设备原始名称（防止被覆盖）                       │
+│  3. 在设备注册表中将华为实体迁移到 Sonoff 设备                   │
+│     ├── WiFi 访问开关 + 设备追踪实体 → 挂到 Sonoff 设备          │
+│     └── 合并 identifiers,删除空壳设备                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**代码实现**：[update_coordinator.py#L2851-L2945](file:///D:/ai-hub/integrations/huawei_router/custom_components/huawei_router/update_coordinator.py#L2851-L2945)
-
-#### 3. 核心数据结构
-
-```python
-# hass.data["sonoff"] 结构
-{
-    entry_id: XRegistry,  # Sonoff 集成的注册表对象
-    ...
-}
-
-# Sonoff 存储文件结构（/config/.storage/sonoff/*.json）
-{
-    "deviceid": "100123456789",
-    "params": {
-        "localip": "192.168.3.100",
-        ...
-    },
-    ...
-}
-```
-
-#### 4. 合并策略
-
-| 步骤 | 操作 | 说明 |
-|------|------|------|
-| 1 | 更新 connections | 将 MAC 添加到 Sonoff 设备的 connections |
-| 2 | 迁移实体 | 将华为路由器创建的 WiFi 开关、device_tracker 等实体迁移到 Sonoff 设备 |
-| 3 | 合并 identifiers | 添加 `(huawei_router, MAC)` 到 Sonoff 设备的 identifiers |
-| 4 | 删除空设备 | 删除华为路由器创建的空设备 |
-| 5 | 恢复名称 | 从 Sonoff 存储文件恢复原始设备名称 |
-
-#### 5. 性能优化
-
-- **缓存机制**：存储文件读取结果缓存，每 20 次更新周期刷新一次
-- **零 IO 优先**：优先使用 `hass.data['sonoff']` 的内存数据
-- **跳过已关联**：已合并的设备不会重复处理
-- **异常处理**：`suppress_update_exception` 装饰器确保关联失败不影响主流程
-
-### 使用场景
-
-#### 场景1：Sonoff 智能开关
-
-用户有一个 Sonoff 智能开关，同时连接到华为路由器：
-- **合并前**：两个独立设备卡片
-  - Sonoff 设备：显示开关实体
-  - 华为路由器设备：显示 WiFi 开关、信号强度、流量传感器
-- **合并后**：一个统一设备卡片
-  - 包含 Sonoff 的开关实体
-  - 包含华为路由器的 WiFi 开关、信号强度、流量传感器
-
-#### 场景2：自动化联动
-
-结合两个集成的数据创建更智能的自动化：
-
-```yaml
-automation:
-  - trigger:
-      # 当设备连接到特定子路由时
-      platform: event
-      event_type: huawei_router.device_connected
-      event_data:
-        router_name: "客厅子路由"
-    condition:
-      # 且该设备是 Sonoff 智能插座
-      condition: device
-      device_id: device.sonoff_smart_plug
-    action:
-      - service: notify.persistent_notification
-        data:
-          message: "智能插座已连接到客厅路由"
-```
-
 ### 配置选项
-
 | 选项 | 默认 | 说明 |
 |------|------|------|
 | 自动关联设备 | ✅ | 是否启用 Sonoff 设备自动关联功能 |
@@ -278,12 +188,11 @@ automation:
 ---
 
 ## 配置选项
-
 添加集成后，点击配置可调整以下选项：
-
 | 选项 | 默认 | 说明 |
 |------|------|------|
-| 数据更新间隔 | 30秒 | 轮询频率 |
+| 数据更新间隔 | 30秒 | 轮询频率（最低 10 秒，防止请求风暴） |
+| 设备传感器分组 | 全选 | 控制每台设备生成哪些实体：基础/信号/实时速率/流量统计/设备信息 |
 | 路由器客户端传感器 | ✅ | 显示子路由客户端数、分组设备等 |
 | 设备标签统计 | ✅ | 客户端传感器中的 guest/hilink/wireless/lan 分类计数 |
 | 设备追踪 | ✅ | 是否创建设备追踪实体 |
@@ -299,18 +208,15 @@ automation:
 ---
 
 ## 安装
-
 ### 方法一：通过 HACS（推荐）
-
 1. 打开 HACS → 集成
 2. 点击右上角 `⋮` → `自定义存储库`
-3. 添加仓库地址：`https://github.com/C3H3-AI/ha-huawei-q6`
+3. 添加仓库地址：`https://github.com/C3H3-AI/ha-huawei-router`
 4. 类别选择：`插件`
-5. 搜索 **Huawei Q6 Router** 并安装
+5. 搜索 **Huawei Router** 并安装
 6. 重启 Home Assistant
 
 ### 方法二：手动安装
-
 ```bash
 # 下载 custom_components/huawei_router 目录
 # 放入 Home Assistant 配置目录的 custom_components/ 下
@@ -319,9 +225,8 @@ automation:
 ---
 
 ## 首次配置
-
 1. **设置** → **设备与服务** → **添加集成**
-2. 搜索 **Huawei Q6 Router**
+2. 搜索 **Huawei Router**
 3. 输入以下信息：
    - **主机**：`192.168.3.1`（路由器 LAN IP）
    - **用户名**：`admin`
@@ -331,9 +236,7 @@ automation:
 ---
 
 ## 自动化示例
-
 ### 设备连接通知
-
 ```yaml
 automation:
   - trigger:
@@ -347,7 +250,6 @@ automation:
 ```
 
 ### 访客网络定时开关
-
 ```yaml
 automation:
   - trigger:
@@ -355,11 +257,10 @@ automation:
     action:
       - service: switch.turn_off
         target:
-          entity_id: switch.huawei_q6_router_guest_network
+          entity_id: switch.huawei_router_guest_network
 ```
 
 ### 子路由离线告警
-
 ```yaml
 automation:
   - trigger:
@@ -375,39 +276,19 @@ automation:
 ---
 
 ## 故障排查
-
-### 集成添加失败
-- 确认路由器用户名/密码正确
-- 确认 Home Assistant 可以访问路由器 IP（同一局域网）
-- 检查路由器是否开启了"远程管理"或"HNC"功能
-
-### 传感器显示"不可用"
-- 检查路由器是否在线
-- 查看 Home Assistant 日志中是否有认证错误
-- 部分功能（如 NFC、时间控制）需要在路由器后台开启对应功能
-
-### 子路由没有重启按键
-- 子路由需要先在线，重启按键才会动态创建
-- 确认数据更新间隔不要太长
+- **实体很多/很少**：设备级实体由"设备传感器分组"选项控制，在集成配置中按需勾选；
+- **数据不更新**：确认刷新间隔 ≥ 10 秒；查看 HA 日志中 `custom_components.huawei_router` 的报错；
+- **路由器管理页面被挤下线**：旧版本存在此问题（会话冲突），请升级到 v1.12.0+；
+- **Q6 网线版**：不支持 NFC、家长控制、时间控制接口，相关实体会自动跳过，属正常现象。
 
 ---
 
 ## 更新日志
+### v1.12.0
+- **实体分组控制**：新增"设备传感器分组"选项，按组控制每台设备的实体数量（设备多的 Mesh 网络强烈建议关闭不需要的分组）
+- **网络风暴防护**：刷新间隔强制下限 10 秒；不支持的功能接口自动识别跳过，不再反复重登录；Sonoff 关联降频
+- **稳定性修复**：服务注册失败导致初始化崩溃、设备数据静默失效、WAN 速率单位错误、多处 None 崩溃等
+- **兼容性**：适配 Home Assistant 2026 弃用项（ScannerEntity、verify_domain_control），新旧版本均可运行
 
-### v1.10.0
+### 历史
 - 🐛 **修复主路由重启按键缺失**：华为 Q6 网线版主路由之前没有重启按键，现在已修复
-- 🧹 **清理冗余代码**：移除注释掉的子路由 API 创建逻辑
-- 🧹 **移除工具脚本**：删除开发辅助脚本
-- 📦 **新增 ha_services.py**：独立服务模块
-
----
-
-## 致谢
-
-本集成基于 [vmakeev/huawei_mesh_router](https://github.com/vmakeev/huawei_mesh_router) 修改而来。
-
----
-
-## 许可证
-
-MIT License

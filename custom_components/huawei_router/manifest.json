@@ -1,6 +1,6 @@
 {
   "domain": "huawei_router",
-  "name": "Huawei Q6 Router",
+  "name": "Huawei Router",
   "icon": "mdi:router-wireless",
   "after_dependencies": [
     "zone"
@@ -9,10 +9,10 @@
     "@vmakeev"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/C3H3-AI/ha-huawei-q6",
+  "documentation": "https://github.com/C3H3-AI/ha-huawei-router",
   "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/C3H3-AI/ha-huawei-q6/issues",
+  "issue_tracker": "https://github.com/C3H3-AI/ha-huawei-router/issues",
   "requirements": ["pycryptodome>=3.12.0"],
   "version": "1.12.0"
 }
