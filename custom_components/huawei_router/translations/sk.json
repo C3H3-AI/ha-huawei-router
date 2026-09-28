@@ -41,7 +41,10 @@
                     "port_mapping_switches": "Prepínače pre presmerovanie portov",
                     "url_filter_switches": "Prepínače filtrovania webových stránok",
                     "event_entities": "Subjekty udalostí",
-                    "time_control_switches": "Prepínače riadenia času prístupu"
+                    "time_control_switches": "Prepínače riadenia času prístupu",
+                    "device_sensor_groups": "Skupiny senzorov zariadení",
+                    "skip_offline_devices": "Preskočiť offline zariadenia",
+                    "auto_associate_devices": "Automatické priradenie zariadení"
                 },
                 "title": "Huawei mesh router nastavenie (2\/2)",
                 "description": "Pridané vlastnosti"
