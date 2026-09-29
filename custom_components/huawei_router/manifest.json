@@ -1,7 +1,6 @@
 {
   "domain": "huawei_router",
   "name": "Huawei Router",
-  "icon": "mdi:router-wireless",
   "after_dependencies": [
     "zone"
   ],
