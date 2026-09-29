@@ -342,6 +342,8 @@ class Action(StrEnum):
 
     REBOOT: Final = "reboot_action"
 
+    WAN_RECONNECT: Final = "wan_reconnect_action"
+
 
 
 

@@ -75,3 +75,7 @@ guest_network_setup:
       example: "K3k*eJWtFv!~ME4}"
       selector:
         text:
+wan_reconnect:
+  name: WAN 重拨
+  description: 触发 PPPoE WAN 断开并重新拨号（短暂断网）。
+  fields: {}

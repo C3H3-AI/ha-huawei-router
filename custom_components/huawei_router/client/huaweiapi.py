@@ -2,6 +2,10 @@
 
 
 
+import asyncio
+
+import datetime
+
 import logging
 
 from typing import Any, Final, Iterable, Tuple
@@ -79,6 +83,8 @@ from .const import (
     URL_TIME_CONTROL,
 
     URL_URL_FILTER,
+
+    URL_TIMED_REDIAL,
 
     URL_WANDETECT,
 
@@ -534,9 +540,96 @@ class HuaweiApi:
 
             await self._core_api.post(URL_REBOOT, {})
 
+        elif action == Action.WAN_RECONNECT:
+
+            await self.wan_reconnect()
+
         else:
 
             raise UnsupportedActionError(f"Unsupported action name: {action}")
+
+
+
+    async def wan_reconnect(self) -> None:
+
+        """Perform a PPPoE WAN disconnect + reconnect cycle.
+
+        Uses the Huawei TimedRedial API (POST /api/ntwk/timedredial) which
+        triggers a WAN re-dial at the specified time. We set the time to
+        1 minute from now so the re-dial fires almost immediately.
+
+        Verified on WS8000 series (Q6) firmware 6.1.0.20(V7R2).
+        """
+
+        # 1. Save current timedredial config so we can restore it later
+        original_config = {}
+        try:
+            original_config = await self._core_api.get(URL_TIMED_REDIAL)
+            self._logger.debug(
+                "Saved original timedredial config: %s", original_config
+            )
+        except Exception as exc:
+            self._logger.warning(
+                "Could not read original timedredial config: %s", exc
+            )
+
+        # 2. Build re-dial time: now + 60 seconds (24h "HH:MM" format)
+        trigger_time = (
+            datetime.datetime.now() + datetime.timedelta(seconds=60)
+        ).strftime("%H:%M")
+
+        self._logger.info(
+            "Triggering WAN reconnect via timedredial at %s", trigger_time
+        )
+
+        # 3. Enable timedredial with our trigger time
+        await self._core_api.post(
+            URL_TIMED_REDIAL,
+            {"Enable": True, "RedialTime": trigger_time},
+        )
+
+        self._logger.info(
+            "TimedRedial enabled at %s — waiting up to 120s for WAN to drop and re-dial...",
+            trigger_time,
+        )
+
+        # 4. Wait for the re-dial to complete (give it up to 2 minutes)
+        for _ in range(24):
+            await asyncio.sleep(5)
+            try:
+                wan = await self._core_api.get(URL_WAN_INFO)
+                status = wan.get("ConnectionStatus", "")
+                uptime = wan.get("Uptime", 0)
+                if status == "Connected" and isinstance(uptime, (int, float)) and uptime < 300:
+                    self._logger.info(
+                        "WAN reconnect confirmed! Status=%s, Uptime=%ss (< 5min)",
+                        status,
+                        uptime,
+                    )
+                    break
+            except Exception as exc:
+                self._logger.debug("While waiting for reconnect: %s", exc)
+
+        # 5. Restore original timedredial config so we don't leave it enabled
+        try:
+            if original_config:
+                await self._core_api.post(URL_TIMED_REDIAL, original_config)
+                self._logger.info(
+                    "Restored original timedredial config: %s", original_config
+                )
+            else:
+                # Best-effort: just disable it
+                await self._core_api.post(
+                    URL_TIMED_REDIAL, {"Enable": False, "RedialTime": "04:00"}
+                )
+                self._logger.info("Disabled timedredial (no original config saved)")
+        except Exception as exc:
+            self._logger.warning(
+                "Could not restore timedredial config: %s — please verify manually",
+                exc,
+            )
+
+        self._logger.info("WAN reconnect cycle completed")
 
 
 
