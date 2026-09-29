@@ -1,0 +1,47 @@
+# GitHub generate-notes 的 PR 分类规则
+#
+# gh release create --generate-notes 会按这里的 label 把 PR 分组。
+#
+# pr-guard 按 PR 标题自动打 type: <类型> 标签（feat/fix/refactor/docs/
+# ci/chore/test/perf）—— 这里必须全部覆盖（否则掉进"其他"兜底分类）。
+#
+# 顺序就是 Release 正文里从上到下的分组顺序。
+# 最后那个 "*" 必须有（兜底）且在最后（否则吞掉后面所有分类）。
+
+changelog:
+  categories:
+    - title: "✨ Features / 新功能"
+      labels:
+        - "type: feat"
+        - "enhancement"
+
+    - title: "🐛 Bug Fixes / 问题修复"
+      labels:
+        - "type: fix"
+        - "bug"
+
+    - title: "⚡ Performance / 性能"
+      labels:
+        - "type: perf"
+
+    - title: "♻️ Refactor / 重构"
+      labels:
+        - "type: refactor"
+
+    - title: "🚀 CI / 构建"
+      labels:
+        - "type: ci"
+
+    - title: "🧹 Chores / 杂项"
+      labels:
+        - "type: chore"
+        - "type: test"
+
+    - title: "📝 Docs / 文档"
+      labels:
+        - "type: docs"
+        - "documentation"
+
+    - title: "Other Changes / 其他"
+      labels:
+        - "*"

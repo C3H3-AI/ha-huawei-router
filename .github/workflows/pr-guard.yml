@@ -1,0 +1,53 @@
+name: PR Guard
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  PR 规范守卫 —— 把 CONTRIBUTING 里"靠人记得"的规则变成机器强制
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#  为什么需要它（ha-lixiang 2026-09-28 实测教训，同样适用于本仓库）：
+#    CONTRIBUTING 明确写了「PR 合并后不得继续在同一个分支上提交」，
+#    还附了检查命令 —— 但没有任何机制拦人。
+#    结果同一次会话里，同一个分支被 PR #5 和 PR #7 先后使用：
+#      PR #5 合并后又往同一分支提交 → 新提交卡在已关闭 PR 的分支上
+#      → 只能再开一个 PR 补救，中途还建错分支又删掉。
+#
+#    规则写了、案例也有，仍然违反 —— 因为规则只是文档。
+#
+#  检查逻辑在 .github/scripts/pr_guard.py（可本地 --dry-run 自测）：
+#    ① 【失败】head 分支曾被合并过
+#    ② 【失败】PR 标题不符合 Conventional Commits
+#    ③ 【警告】未关联 Issue
+#    ④ 按标题类型自动打 `type: <类型>` 标签
+#    ⑤ 按改动路径自动打 `area: <范围>` 标签
+# ═══════════════════════════════════════════════════════════════════════════
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  guard:
+    name: pr guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: false
+
+      - name: 运行 PR 规范守卫
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          REPO: ${{ github.repository }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: python3 .github/scripts/pr_guard.py

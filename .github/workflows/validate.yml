@@ -1,0 +1,200 @@
+name: Validate
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  CI —— 提交/PR 时自动校验
+#
+#  检查项：
+#   1. hassfest      —— HA 官方集成结构校验（manifest/翻译/依赖）
+#   2. HACS validate —— HACS 集成规范校验
+#   3. Python 语法   —— py_compile 全量
+#   4. JSON 有效性   —— manifest / translations / icons
+#   5. manifest 必填字段 + domain 一致性
+#   6. 敏感信息扫描  —— 防止个人数据误提交（需配置 SENSITIVE_PATTERNS）
+# ═══════════════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ── HA 官方结构校验 ────────────────────────────────────────────────────
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  # ── HACS 规范校验 ──────────────────────────────────────────────────────
+  hacs:
+    name: HACS validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration
+
+  # ── 代码质量（语法 + JSON + manifest + 敏感信息）────────────────────────
+  lint:
+    name: lint & security
+    runs-on: ubuntu-latest
+    # ★ ha-lixiang 2026-09-28 实测教训：曾有两个扫描步骤都引用了
+    #   ${SENSITIVE_PATTERNS}，却【从未】把 secret 映射成环境变量 ——
+    #   变量永远为空，于是「敏感信息扫描」自诞生起就是空操作
+    #   （静默 exit 0，连警告都没有）。
+    #   注：fork PR 拿不到 secret，此时会输出 warning 并跳过（见步骤内逻辑）。
+    env:
+      SENSITIVE_PATTERNS: ${{ secrets.SENSITIVE_PATTERNS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ★ 必须完整历史。默认 fetch-depth: 1 只取当前提交，
+          #   rev-list <base>..<head> 将解析失败 → 静默扫 0 个提交 → 假通过。
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python 语法检查
+        run: |
+          set -e
+          fail=0
+          # 递归覆盖 client/ 子包（只写 *.py 会漏掉子目录）
+          while IFS= read -r f; do
+            if ! python -m py_compile "$f"; then
+              echo "::error file=$f::语法错误"
+              fail=1
+            fi
+          done < <(find custom_components/huawei_router -name '*.py' -not -path '*/__pycache__/*')
+          exit $fail
+
+      - name: JSON 有效性
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r f; do
+            python -c "import json,sys;json.load(open('$f',encoding='utf-8'))" \
+              || { echo "::error file=$f::JSON 无效"; fail=1; }
+          done < <(find custom_components -name '*.json' -not -path '*/__pycache__/*')
+          exit $fail
+
+      - name: manifest 必填字段
+        run: |
+          python - <<'PY'
+          import json, sys
+          m = json.load(open("custom_components/huawei_router/manifest.json", encoding="utf-8"))
+          required = ["domain", "name", "version", "documentation", "codeowners", "config_flow"]
+          missing = [k for k in required if k not in m]
+          if missing:
+              print(f"::error::manifest.json 缺少字段: {missing}")
+              sys.exit(1)
+          if m["domain"] != "huawei_router":
+              print("::error::domain 必须为 huawei_router")
+              sys.exit(1)
+          if not m["version"]:
+              print("::error::manifest.json 的 version 不能为空")
+              sys.exit(1)
+          print(f"manifest 完整 (version={m['version']})")
+          PY
+
+      - name: 敏感信息扫描（文件内容）
+        run: |
+          set -e
+          if [[ -z "${SENSITIVE_PATTERNS:-}" ]]; then
+            echo "::warning::未配置 SENSITIVE_PATTERNS，文件内容敏感扫描【已跳过】"
+            echo "::warning::（fork PR 属预期；同仓库 PR 出现此警告说明 env 未接线）"
+            exit 0
+          fi
+          if [[ -n "${SENSITIVE_PATTERNS:-}" ]]; then
+          python3 - <<'PY'
+          import json, os, re, subprocess, sys
+          try:
+              patterns = json.loads(os.environ["SENSITIVE_PATTERNS"])
+          except Exception as e:
+              # ★ fail-closed：配置了却解析不了 → 报错，不能静默放过
+              print("::error::SENSITIVE_PATTERNS 不是合法 JSON: " + str(e))
+              sys.exit(1)
+          # ★ 扫描全部【已跟踪文件】，不只扫 custom_components/ 与 README.md。
+          #   教训：AI-workspace 的脚本曾在仓库外硬编码真实手机号/密码/VIN，
+          #   而当时没有任何自动检查覆盖脚本类文件。
+          proc = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
+          if proc.returncode != 0:
+              print("::error::git ls-files 失败: " + proc.stderr.strip())
+              sys.exit(1)
+          files = proc.stdout.split()
+          fail = 0
+          for name, pattern in patterns.items():
+              hits = []
+              for f in files:
+                  try:
+                      with open(f, encoding="utf-8", errors="ignore") as fh:
+                          if re.search(pattern, fh.read()):
+                              hits.append(f)
+                  except Exception:
+                      pass
+              if hits:
+                  print("::error::发现 " + name + " 泄露")
+                  for h in hits:
+                      print("  " + h)
+                  fail = 1
+          print("已扫描 %d 个跟踪文件，%d 类模式" % (len(files), len(patterns)))
+          sys.exit(fail)
+          PY
+            exit $?
+          fi
+
+      - name: 敏感信息扫描（提交消息）
+        # ★ 原「敏感信息扫描」只覆盖【文件内容】。实际教训：真实 VIN 曾被写进
+        #   【提交消息】并成功推送 —— 文件内容扫描完全看不见，而提交消息是
+        #   永久且公开的（force push 删除分支后，GitHub 仍可按 SHA 直接访问）。
+        #   因此提交消息必须【单独】扫描。
+        run: |
+          set -e
+          if [[ -z "${SENSITIVE_PATTERNS:-}" ]]; then
+            echo "::warning::未配置 SENSITIVE_PATTERNS，跳过提交消息扫描"
+            exit 0
+          fi
+          BASE="${{ github.event.pull_request.base.sha }}"
+          [[ -z "$BASE" ]] && BASE="${{ github.event.before }}"
+          if [[ -z "$BASE" || "$BASE" =~ ^0+$ ]]; then
+            RANGE="--all"
+          else
+            RANGE="$BASE..${{ github.sha }}"
+          fi
+          echo "提交消息扫描范围: $RANGE"
+          python3 - "$RANGE" <<'PY'
+          import json, os, re, subprocess, sys
+          rng = sys.argv[1]
+          try:
+              patterns = json.loads(os.environ["SENSITIVE_PATTERNS"])
+          except Exception as e:
+              # ★ fail-closed：配置了却解析不了 → 报错，不能静默放过
+              print("::error::SENSITIVE_PATTERNS 不是合法 JSON: " + str(e))
+              sys.exit(1)
+          cmd = ["git", "rev-list", "--all"] if rng == "--all" else ["git", "rev-list", rng]
+          proc = subprocess.run(cmd, capture_output=True, text=True)
+          # ★ fail-closed：rev-list 本身失败（如浅克隆缺 base 提交）绝不能当成「无泄露」
+          if proc.returncode != 0:
+              print("::error::git rev-list 失败，无法扫描: " + proc.stderr.strip())
+              print("::error::若为浅克隆所致，请在 checkout 设置 fetch-depth: 0")
+              sys.exit(1)
+          revs = proc.stdout.split()
+          # ★ 同上：范围非空却扫到 0 个提交，说明范围解析有问题，不能静默通过
+          if not revs:
+              print("::error::扫描范围为 " + rng + " 但未取到任何提交（疑似浅克隆/范围无效）")
+              sys.exit(1)
+          fail = 0
+          for sha in revs:
+              msg = subprocess.run(["git", "log", "-1", "--format=%B", sha],
+                                   capture_output=True, text=True).stdout
+              for name, pat in patterns.items():
+                  if re.search(pat, msg):
+                      print("::error::提交 " + sha[:8] + " 的提交消息含 " + name)
+                      fail = 1
+          print("已扫描 " + str(len(revs)) + " 个提交消息，" + str(len(patterns)) + " 类模式")
+          sys.exit(fail)
+          PY
