@@ -660,12 +660,144 @@ class HuaweiPortMappingItem:
 
     @property
 
+
+
     def host_mac(self) -> str:
+
+
 
         return self._host_mac
 
 
 
+# ---------------------------
+
+#   HuaweiPortTriggerItem
+
+# ---------------------------
+class HuaweiPortTriggerItem:
+
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        enabled: bool,
+        application_id: str,
+    ) -> None:
+        self._id = id
+        self._name = name
+        self._enabled = enabled
+        self._application_id = application_id
+
+    @classmethod
+    def parse(cls, raw_data: dict[str, Any]) -> HuaweiPortTriggerItem:
+        id = raw_data.get("ID")
+        if not id:
+            raise ValueError("Id can not be empty")
+        raw_enabled = raw_data.get("Enable")
+        enabled = isinstance(raw_enabled, bool) and raw_enabled
+        name = raw_data.get("Name", "")
+        application_id = raw_data.get("ApplicationID", "")
+        return HuaweiPortTriggerItem(id, name, enabled, application_id)
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+
+# ---------------------------
+
+#   HuaweiUPnPPortMappingItem
+
+# ---------------------------
+class HuaweiUPnPPortMappingItem:
+
+    def __init__(
+        self,
+        external_port: int,
+        internal_port: int,
+        internal_client: str,
+        protocol: str,
+        enabled: bool,
+        description: str,
+    ) -> None:
+        self._external_port = external_port
+        self._internal_port = internal_port
+        self._internal_client = internal_client
+        self._protocol = protocol
+        self._enabled = enabled
+        self._description = description
+
+    @classmethod
+    def parse(cls, raw_data: dict[str, Any]) -> HuaweiUPnPPortMappingItem:
+        external_port = raw_data.get("externalport", 0)
+        internal_port = raw_data.get("internalport", 0)
+        internal_client = raw_data.get("internalclient", "")
+        protocol = raw_data.get("protocol", "TCP")
+        enabled_raw = raw_data.get("enable", 0)
+        enabled = bool(enabled_raw) if isinstance(enabled_raw, bool) else int(enabled_raw) == 1
+        description = raw_data.get("portmappingdesc", "")
+        return HuaweiUPnPPortMappingItem(
+            external_port, internal_port, internal_client, protocol, enabled, description
+        )
+
+    @property
+    def external_port(self) -> int:
+        return self._external_port
+
+    @property
+    def internal_port(self) -> int:
+        return self._internal_port
+
+    @property
+    def internal_client(self) -> str:
+        return self._internal_client
+
+    @property
+    def protocol(self) -> str:
+        return self._protocol
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+
+# ---------------------------
+
+#   HuaweiDhcpStaticLeaseItem
+
+# ---------------------------
+
+@dataclass
+class HuaweiDhcpStaticLeaseItem:
+    """DHCP 静态 IP 保留（MAC-IP 绑定）条目."""
+
+    id: str
+    ip_address: str
+    mac_address: str
+    enabled: bool
+
+    @classmethod
+    def parse(cls, raw_data: dict[str, Any]) -> HuaweiDhcpStaticLeaseItem:
+        raw_enabled = raw_data.get("Enable")
+        return cls(
+            id=raw_data.get("ID", ""),
+            ip_address=raw_data.get("Yiaddr", ""),
+            mac_address=raw_data.get("Chaddr", ""),
+            enabled=isinstance(raw_enabled, bool) and raw_enabled,
+        )
 
 
 # ---------------------------

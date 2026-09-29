@@ -44,7 +44,13 @@ from .classes import (
 
     HuaweiGuestNetworkItem,
 
+    HuaweiDhcpStaticLeaseItem,
+
     HuaweiPortMappingItem,
+
+    HuaweiPortTriggerItem,
+
+    HuaweiUPnPPortMappingItem,
 
     HuaweiRouterInfo,
 
@@ -70,6 +76,12 @@ from .const import (
 
     URL_PORT_MAPPING,
 
+    URL_PORT_TRIGGER,
+
+    URL_UPNP_PORT_MAPPING,
+
+    URL_APPLICATION,
+
     URL_REBOOT,
 
     URL_REPEATER_INFO,
@@ -91,6 +103,30 @@ from .const import (
     URL_WLAN_FILTER,
 
     URL_WAN_INFO,
+
+    URL_DHCP_STATIC_LEASE,
+
+    URL_UPNP,
+
+    URL_IPV6_ENABLE,
+
+    URL_DMZ,
+
+    URL_FIREWALL,
+
+    URL_REBOOT_PLAN,
+
+    URL_DDNS,
+
+    URL_DDNS_STATUS,
+
+    URL_BAND_STEERING,
+
+    URL_SMART_CONNECT,
+
+    URL_CHANGE_DEVICE_NAME,
+
+    URL_QOS_CLASS_HOST,
 
     WIFI_SECURITY_ENCRYPTED,
 
@@ -1537,6 +1573,231 @@ class HuaweiApi:
 
 
 
+    async def add_port_mapping(
+        self,
+        name: str,
+        mac_address: str,
+        host_ip: str,
+        protocol: str,
+        external_port: str,
+        internal_port: str,
+        enabled: bool = True,
+        host_name: str = "",
+    ) -> bool:
+        """Add a port mapping rule on Q6.
+
+        Q6 requires a two-step flow (traced from the Web UI):
+          1. POST /api/app/application  action=create — create the Application
+             object that carries the protocol + port range (ItemList) and get
+             back a fresh ApplicationID.
+          2. POST /api/ntwk/portmapping action=create — bind that ApplicationID
+             to the rule name / MAC / IP.
+        """
+        try:
+            app_name = f"{name}_pm"
+            app_payload = {
+                "ID": "",
+                "Name": app_name,
+                "ObjAcc": 65535,
+                "EnablePortmapping": True,
+                "EnablePorttrigger": False,
+                "EnableQos": False,
+                "EnableFilter": False,
+                "ItemList": [
+                    {
+                        "ID": "",
+                        "Protocol": protocol,
+                        "ExternalPort": external_port,
+                        "ExternalPortEnd": external_port,
+                        "InternalPort": internal_port,
+                        "InternalPortEnd": internal_port,
+                        "index": 1,
+                    }
+                ],
+            }
+            await self._core_api.post(
+                URL_APPLICATION, app_payload, extra_data={"action": "create"}
+            )
+
+            application_id = await self._find_application_id(app_name)
+            if not application_id:
+                self._logger.warning("Application '%s' not found after create", app_name)
+                return False
+
+            mapping_payload = {
+                "ID": "",
+                "ApplicationID": application_id,
+                "Name": name,
+                "Enable": enabled,
+                "HostName": host_name,
+                "HostIPAddress": host_ip,
+                "InternalHost": mac_address,
+            }
+            await self._core_api.post(
+                URL_PORT_MAPPING, mapping_payload, extra_data={"action": "create"}
+            )
+            return True
+        except Exception as ex:
+            self._logger.warning("Failed to add port mapping: %s", ex)
+            return False
+
+    async def _find_application_id(self, name: str) -> str | None:
+        """Return the ID of the Application with the given name, or None."""
+        applications = self._coerce_list(await self._core_api.get(URL_APPLICATION))
+        for application in applications:
+            if application.get("Name") == name:
+                return application.get("ID")
+        return None
+
+    async def remove_port_mapping(self, port_mapping_id: str) -> bool:
+        """Remove a port mapping rule on Q6.
+
+        Two-step teardown (verified against the router):
+          1. POST /api/ntwk/portmapping action=delete — remove the rule.
+          2. POST /api/app/application action=delete — remove the Application;
+             the router cascades and removes its content items automatically.
+        """
+        try:
+            mappings = self._coerce_list(await self._core_api.get(URL_PORT_MAPPING))
+            target = next(
+                (mapping for mapping in mappings if mapping.get("ID") == port_mapping_id),
+                None,
+            )
+            if not target:
+                self._logger.warning("Unknown port mapping: %s", port_mapping_id)
+                return False
+            application_id = target.get("ApplicationID", "")
+
+            await self._core_api.post(
+                URL_PORT_MAPPING, target, extra_data={"action": "delete"}
+            )
+
+            if application_id:
+                await self._delete_application(application_id)
+
+            return True
+        except Exception as ex:
+            self._logger.warning("Failed to remove port mapping: %s", ex)
+            return False
+
+    async def _delete_application(self, application_id: str) -> None:
+        """Delete an Application object (the router cascades its content items)."""
+        applications = self._coerce_list(await self._core_api.get(URL_APPLICATION))
+        target_app = next(
+            (application for application in applications if application.get("ID") == application_id),
+            None,
+        )
+        if target_app:
+            await self._core_api.post(
+                URL_APPLICATION, target_app, extra_data={"action": "delete"}
+            )
+
+    @staticmethod
+    def _coerce_list(data) -> list:
+        """Normalize a list endpoint response (some wrap in a dict)."""
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            for key in ("data", "result", "items", "ItemList"):
+                value = data.get(key)
+                if isinstance(value, list):
+                    return value
+        return []
+
+
+
+    async def set_port_trigger_state(
+        self, port_trigger_id: str, enabled: bool
+    ) -> None:
+        """Enable or disable a port trigger rule.
+
+        Fetches the current rule, toggles Enable, and posts back with action=update.
+        Verified working on Huawei Q6 (action=update).
+        """
+        port_triggers = await self._core_api.get(URL_PORT_TRIGGER)
+
+        target = next(
+            (item for item in port_triggers if item.get("ID") == port_trigger_id),
+            None,
+        )
+
+        if not target:
+            raise InvalidActionError(f"Unknown port trigger: {port_trigger_id}")
+
+        target["Enable"] = enabled
+
+        await self._core_api.post(
+            URL_PORT_TRIGGER, target, extra_data={"action": "update"}
+        )
+
+
+
+    async def add_port_trigger(
+        self, name: str, application_id: str, enabled: bool = False
+    ) -> bool:
+        """Add a new port trigger rule.
+
+        Q6 router uses TR-069 style:
+          {"Name": "...", "Enable": bool, "ApplicationID": "InternetGatewayDevice.Services.X_Application.N."}
+        action MUST be "create" (not "add") per Q6 逆向测试.
+        """
+        try:
+            payload = {
+                "Name": name,
+                "Enable": enabled,
+                "ApplicationID": application_id,
+            }
+            await self._core_api.post(
+                URL_PORT_TRIGGER, payload, extra_data={"action": "create"}
+            )
+            return True
+        except Exception:
+            return False
+
+
+
+    async def remove_port_trigger(self, port_trigger_id: str) -> bool:
+        """Remove a port trigger rule by its ID.
+
+        action MUST be "delete" (not "remove") per Q6 逆向测试.
+        """
+        try:
+            # 先 get 完整对象，delete 时路由器需要完整 payload
+            triggers = await self._core_api.get(URL_PORT_TRIGGER)
+            target = next(
+                (item for item in triggers if item.get("ID") == port_trigger_id),
+                None,
+            )
+            if not target:
+                return False
+
+            await self._core_api.post(
+                URL_PORT_TRIGGER, target, extra_data={"action": "delete"}
+            )
+            return True
+        except Exception:
+            return False
+
+
+
+    async def get_port_triggers(self) -> Iterable[HuaweiPortTriggerItem]:
+        """Get all port trigger rules."""
+        return [
+            HuaweiPortTriggerItem.parse(item)
+            for item in await self._core_api.get(URL_PORT_TRIGGER)
+        ]
+
+
+
+    async def get_upnp_port_mappings(self) -> Iterable[HuaweiUPnPPortMappingItem]:
+        """Get all UPnP port mapping rules."""
+        data = await self._core_api.get(URL_UPNP_PORT_MAPPING)
+        if isinstance(data, list):
+            return [HuaweiUPnPPortMappingItem.parse(item) for item in data]
+        return []
+
+
+
     async def _set_guest_network_enabled(self, enabled: bool) -> None:
 
         actual_2g, actual_5g = await self.get_guest_network_info()
@@ -1643,5 +1904,224 @@ class HuaweiApi:
 
             URL_TIME_CONTROL, target, extra_data={"action": "update"}
 
+        )
+
+    # ---------------------------
+    #   DHCP 静态 IP 保留（MAC-IP 绑定）
+    # ---------------------------
+
+    async def get_dhcp_static_leases(self) -> Iterable[HuaweiDhcpStaticLeaseItem]:
+        """Get all DHCP static lease (MAC binding) entries."""
+        return [
+            HuaweiDhcpStaticLeaseItem.parse(item)
+            for item in self._coerce_list(await self._core_api.get(URL_DHCP_STATIC_LEASE))
+        ]
+
+    async def add_dhcp_static_lease(
+        self, ip_address: str, mac_address: str, enabled: bool = True
+    ) -> bool:
+        """Add a DHCP static lease (reserve IP for a MAC)."""
+        try:
+            payload = {
+                "ID": "",
+                "Yiaddr": ip_address,
+                "Chaddr": mac_address.upper(),
+                "Enable": enabled,
+            }
+            await self._core_api.post(
+                URL_DHCP_STATIC_LEASE, payload, extra_data={"action": "create"}
+            )
+            return True
+        except Exception as ex:
+            self._logger.warning("Failed to add DHCP static lease: %s", ex)
+            return False
+
+    async def remove_dhcp_static_lease(self, lease_id: str) -> bool:
+        """Remove a DHCP static lease by its ID."""
+        try:
+            leases = self._coerce_list(await self._core_api.get(URL_DHCP_STATIC_LEASE))
+            target = next((x for x in leases if x.get("ID") == lease_id), None)
+            if not target:
+                self._logger.warning("Unknown DHCP static lease: %s", lease_id)
+                return False
+            await self._core_api.post(
+                URL_DHCP_STATIC_LEASE, target, extra_data={"action": "delete"}
+            )
+            return True
+        except Exception as ex:
+            self._logger.warning("Failed to remove DHCP static lease: %s", ex)
+            return False
+
+    async def set_dhcp_static_lease_state(self, lease_id: str, enabled: bool) -> None:
+        """Enable or disable a DHCP static lease."""
+        leases = self._coerce_list(await self._core_api.get(URL_DHCP_STATIC_LEASE))
+        target = next((x for x in leases if x.get("ID") == lease_id), None)
+        if not target:
+            raise InvalidActionError(f"Unknown DHCP static lease: {lease_id}")
+        target["Enable"] = enabled
+        await self._core_api.post(
+            URL_DHCP_STATIC_LEASE, target, extra_data={"action": "update"}
+        )
+
+    # ---------------------------
+    #   UPnP 总开关
+    # ---------------------------
+
+    async def set_upnp_enabled(self, enabled: bool) -> None:
+        cfg = await self._core_api.get(URL_UPNP)
+        cfg["enable"] = enabled
+        await self._core_api.post(URL_UPNP, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   IPv6 开关
+    # ---------------------------
+
+    async def set_ipv6_enabled(self, enabled: bool) -> None:
+        cfg = await self._core_api.get(URL_IPV6_ENABLE)
+        cfg["Enable"] = 1 if enabled else 0
+        await self._core_api.post(URL_IPV6_ENABLE, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   双频优选
+    # ---------------------------
+
+    async def set_band_steering_enabled(self, enabled: bool) -> None:
+        cfg = await self._core_api.get(URL_BAND_STEERING)
+        cfg["DbhoEnable"] = enabled
+        await self._core_api.post(URL_BAND_STEERING, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   智能连接（多频合一）
+    # ---------------------------
+
+    async def set_smart_connect_enabled(self, enabled: bool) -> None:
+        cfg = await self._core_api.get(URL_SMART_CONNECT)
+        cfg["enable"] = enabled
+        cfg["ntwksyncEnable"] = enabled
+        await self._core_api.post(URL_SMART_CONNECT, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   防火墙等级
+    # ---------------------------
+
+    async def set_firewall_level(self, level: str) -> None:
+        cfg = await self._core_api.get(URL_FIREWALL)
+        cfg["SetLevel"] = level
+        await self._core_api.post(URL_FIREWALL, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   DMZ 主机
+    # ---------------------------
+
+    async def set_dmz(self, enabled: bool, ip_address: str) -> None:
+        cfg = await self._core_api.get(URL_DMZ)
+        cfg["Enable"] = enabled
+        if ip_address:
+            cfg["IPAddress"] = ip_address
+        await self._core_api.post(URL_DMZ, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   定时重启
+    # ---------------------------
+
+    async def set_scheduled_reboot(self, enabled: bool, reboot_time: str) -> None:
+        cfg = await self._core_api.get(URL_REBOOT_PLAN)
+        cfg["Enable"] = enabled
+        if reboot_time:
+            cfg["RebootTime"] = reboot_time
+        await self._core_api.post(URL_REBOOT_PLAN, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   DDNS 动态域名
+    # ---------------------------
+
+    async def get_ddns_status(self) -> dict:
+        """Return combined DDNS config and sync status."""
+        ddns = await self._core_api.get(URL_DDNS)
+        status = await self._core_api.get(URL_DDNS_STATUS)
+        result = dict(ddns) if isinstance(ddns, dict) else {}
+        if isinstance(status, dict):
+            result["Status"] = status.get("Status", result.get("Status", ""))
+            result["ConnectType"] = status.get("ConnectType", "")
+        # Password 回传是被掩码的，屏蔽掉以免脏写
+        result.pop("Password", None)
+        return result
+
+    async def set_ddns_enabled(self, enabled: bool) -> None:
+        cfg = await self._core_api.get(URL_DDNS)
+        cfg["Enable"] = enabled
+        cfg.pop("Password", None)
+        await self._core_api.post(URL_DDNS, cfg, extra_data={"action": "update"})
+
+    # ---------------------------
+    #   设备管理（列表模式：改名 / 限速 / 删除）
+    # ---------------------------
+
+    async def _find_host_info(self, mac_address: str) -> dict:
+        """Locate a HostInfo entry by MAC address."""
+        host_info = self._coerce_list(await self._core_api.get(URL_HOST_INFO))
+        mac = str(mac_address).upper()
+        target = next(
+            (
+                x
+                for x in host_info
+                if str(x.get("MACAddress", "")).upper() == mac
+            ),
+            None,
+        )
+        if not target:
+            raise InvalidActionError(f"Unknown device MAC: {mac_address}")
+        return target
+
+    async def set_device_name(self, mac_address: str, name: str) -> None:
+        """Rename a connected device.
+
+        逆向自 Web UI devicesList.postName：
+            POST api/system/changedevicename
+            body: {"action":"update","data":[{"ActualName":<name>,"ID":<HostInfo[].ID>}]}
+        Web UI 将名称截断到 64 字符。
+        """
+        target = await self._find_host_info(mac_address)
+        payload = [{"ActualName": name[:64], "ID": target.get("ID")}]
+        await self._core_api.post(
+            URL_CHANGE_DEVICE_NAME, payload, extra_data={"action": "update"}
+        )
+
+    async def set_device_rate_limit(
+        self,
+        mac_address: str,
+        enabled: bool | None = None,
+        upload_kbps: int | None = None,
+        download_kbps: int | None = None,
+    ) -> None:
+        """Set per-device QoS rate limit.
+
+        逆向自 Web UI devicesList.postRate：
+            POST api/app/qosclass_host，body 为完整的 HostInfo 条目对象（无 action）。
+        相关字段：
+            DeviceDownRateEnable   QoS 总开关
+            DeviceMaxUpLoadRate    上行限速 (Kbps)
+            DeviceMaxDownLoadRate  下行限速 (Kbps)
+        Web UI 允许范围 100 ~ 1000000 Kbps。
+        """
+        target = await self._find_host_info(mac_address)
+        if enabled is not None:
+            target["DeviceDownRateEnable"] = enabled
+        if upload_kbps is not None:
+            target["DeviceMaxUpLoadRate"] = int(upload_kbps)
+        if download_kbps is not None:
+            target["DeviceMaxDownLoadRate"] = int(download_kbps)
+        await self._core_api.post(URL_QOS_CLASS_HOST, target)
+
+    async def remove_device(self, mac_address: str) -> None:
+        """Delete a known device entry.
+
+        逆向自 Web UI devicesList.delDevice：
+            POST api/system/HostInfo
+            body: {"action":"delete","data":{"ID":<HostInfo[].ID>}}
+        """
+        target = await self._find_host_info(mac_address)
+        await self._core_api.post(
+            URL_HOST_INFO, {"ID": target.get("ID")}, extra_data={"action": "delete"}
         )
 
