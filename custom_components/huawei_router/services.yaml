@@ -87,13 +87,13 @@ port_mapping_state:
       required: true
       example: "InternetGatewayDevice.Services.X_Portmapping.1."
       selector:
-        text
+        text:
     enabled:
       required: true
       example: true
       default: true
       selector:
-        boolean
+        boolean:
 port_mapping_add:
   name: 新增端口映射
   description: 在路由器上新增一条端口映射规则（自动创建 Application 对象并绑定协议/端口）。
@@ -157,7 +157,7 @@ port_mapping_remove:
       required: true
       example: "InternetGatewayDevice.Services.X_Portmapping.1."
       selector:
-        text
+        text:
 port_mapping_list:
   name: 列出端口映射
   description: 列出所有端口映射规则（含 id、名称、MAC、IP、端口与启用状态）。
@@ -170,13 +170,13 @@ port_trigger_state:
       required: true
       example: "InternetGatewayDevice.Services.X_Porttrigger.1."
       selector:
-        text
+        text:
     enabled:
       required: true
       example: true
       default: true
       selector:
-        boolean
+        boolean:
 port_trigger_add:
   name: 新增端口触发
   description: 新增一条端口触发（Port Triggering）规则。需要绑定 ApplicationID（对应端口和协议）。先用 port_trigger_list 拿到已有 ApplicationID 参考。
@@ -185,18 +185,18 @@ port_trigger_add:
       required: true
       example: "my_app"
       selector:
-        text
+        text:
     application_id:
       required: true
       example: "InternetGatewayDevice.Services.X_Application.2."
       selector:
-        text
+        text:
     enabled:
       required: false
       example: false
       default: false
       selector:
-        boolean
+        boolean:
 port_trigger_remove:
   name: 删除端口触发
   description: 根据 port_trigger_id 删除一条端口触发规则。先用 port_trigger_list 查到 id。
@@ -205,7 +205,7 @@ port_trigger_remove:
       required: true
       example: "InternetGatewayDevice.Services.X_Porttrigger.1."
       selector:
-        text
+        text:
 port_trigger_list:
   name: 列出端口触发规则
   description: 列出所有端口触发（Port Triggering）规则。
