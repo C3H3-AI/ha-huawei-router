@@ -38,6 +38,11 @@ Thumbs.db
 memory/
 logs/
 scripts/
+# ★ 例外：CI 脚本必须提交（上面的 scripts/ 会连 .github/scripts/ 一起吞掉 ——
+#   不加这条，pr-guard 的检查脚本不会被提交，workflow 会静默失效）
+#   只否定 *.py：用 ** 会连 __pycache__/*.pyc 一起放行（实测踩过）。
+!.github/scripts/
+!.github/scripts/*.py
 skills/
 analysis/
 backups/
