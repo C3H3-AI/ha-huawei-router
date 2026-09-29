@@ -41,7 +41,10 @@
                     "port_mapping_switches": "Выключатели переадресации портов",
                     "url_filter_switches": "Выключатели фильтров web-сайтов",
                     "event_entities": "Объекты для событий",
-                    "time_control_switches": "Выключатели контроля времени доступа"
+                    "time_control_switches": "Выключатели контроля времени доступа",
+                    "device_sensor_groups": "Группы сенсоров устройств",
+                    "skip_offline_devices": "Пропускать offline-устройства",
+                    "auto_associate_devices": "Автосвязывание устройств"
                 },
                 "title": "Настройка интеграции mesh маршрутизатора Huawei (2\/2)",
                 "description": "Расширенная функциональность"

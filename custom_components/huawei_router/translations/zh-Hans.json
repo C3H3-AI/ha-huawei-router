@@ -179,7 +179,10 @@
                     "port_mapping_switches": "端口转发开关",
                     "url_filter_switches": "网站过滤开关",
                     "event_entities": "事件实体",
-                    "time_control_switches": "访问时间控制开关"
+                    "time_control_switches": "访问时间控制开关",
+                    "device_sensor_groups": "设备传感器分组",
+                    "skip_offline_devices": "跳过离线设备",
+                    "auto_associate_devices": "自动关联设备"
                 },
                 "title": "华为Mesh路由器配置（2/2）",
                 "description": "额外功能"
