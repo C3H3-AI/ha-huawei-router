@@ -97,6 +97,8 @@ states*.json
 *.png
 *.jpg
 *.jpeg
+# 例外：集成品牌资源必须提交（HA 2026.3+ 本地品牌图特性）
+!custom_components/*/brand/*.png
 
 # Markdown workspace files
 AGENTS.md
