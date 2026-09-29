@@ -15,7 +15,7 @@ from yarl import URL
 from .classes import HuaweiRsaPublicKey
 from .crypto import generate_nonce, get_client_proof
 
-TIMEOUT: Final = 5.0
+TIMEOUT: Final = 15.0
 
 SESSION_COOKIE_NAME: Final = "SessionID_R3"
 
@@ -372,7 +372,16 @@ class HuaweiCoreApi:
         if self._session is None:
             """Unsafe cookies for IP addresses instead of domain names"""
             jar = aiohttp.CookieJar(unsafe=True)
-            self._session = aiohttp.ClientSession(cookie_jar=jar)
+            self._session = aiohttp.ClientSession(
+                cookie_jar=jar,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                    "Origin": "http://192.168.3.1",
+                    "Referer": "http://192.168.3.1/html/index.html",
+                },
+            )
             self._logger.debug("Session created")
         self._session.cookie_jar.clear()
         self._active_csrf = None
