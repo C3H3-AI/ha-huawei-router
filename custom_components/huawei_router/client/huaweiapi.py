@@ -132,9 +132,99 @@ from .const import (
 
     WIFI_SECURITY_OPEN,
 
+    URL_WLAN_RADIO,
+
+    URL_WLAN_WPS,
+
+    URL_WPS_SWITCH,
+
+    URL_MULTI_SSID,
+
+    URL_WLAN_TIMING_ACCELERATE,
+
+    URL_WLAN_WIFI_SYNC,
+
+    URL_LAN,
+
+    URL_LAN_ALL,
+
+    URL_LAN_SERVER,
+
+    URL_WAN_LEARN_CONFIG,
+
+    URL_WAN_DIAGNOSE,
+
+    URL_IPV6_WAN,
+
+    URL_IPV6_LAN,
+
+    URL_ALG,
+
+    URL_TUNNEL,
+
+    URL_SWAN,
+
+    URL_SMART_VPN,
+
+    URL_IPTV,
+
+    URL_MAC_FILTER,
+
+    URL_ACCESS_AUTH,
+
+    URL_HOMESEC_ABFA,
+
+    URL_HOMESEC_STEALNET,
+
+    URL_XLINK_LOCK_NET,
+
+    URL_GUEST_NETWORK_LIMIT_RATE,
+
+    URL_GUEST_NETWORK_REST_TIME,
+
+    URL_NTP,
+
+    URL_PROCESS_STATUS,
+
+    URL_ONLINE_STATE,
+
+    URL_ETH_NEGOTIATION,
+
+    URL_AUTO_UPGRADE,
+
+    URL_ONLINE_UPGRADE,
+
+    URL_PASSWORD_RULE,
+
+    URL_USER_ACCOUNT,
+
+    URL_LANGUAGE,
+
+    URL_WIFI_SCAN,
+
+    URL_WIFI_SCAN_RESULT,
+
+    URL_REPEATER_STATE,
+
+    URL_REPEATER_DIAG,
+
+    URL_REPEATER_DIAL,
+
+    URL_NETDISK_INFO,
+
+    URL_NETDISK_CODE,
+
+    URL_HILINK_STATUS,
+
+    URL_SLAVE_SETUP,
+
+    URL_MULTI_HOST_INFO,
+
+    URL_SYSTEM_MODE,
+
 )
 
-from .coreapi import HuaweiCoreApi
+from .coreapi import HuaweiCoreApi, _get_response_json
 
 from .crypto import rsa_encode
 
@@ -2124,4 +2214,188 @@ class HuaweiApi:
         await self._core_api.post(
             URL_HOST_INFO, {"ID": target.get("ID")}, extra_data={"action": "delete"}
         )
+
+    # ---------------------------
+    #   通用 API 桥接（Web UI 剩余端点）
+    # ---------------------------
+
+    async def get_endpoint_config(self, path: str) -> Any:
+        """对指定端点执行原始 GET，返回 {"status": <int>, "data": <json|None>}。
+
+        刻意绕开 HuaweiCoreApi.get()：后者把 404 当作未授权并触发重新登录，
+        批量探测未知端点时会打满路由器仅有的 2 个 admin session。
+        """
+        await self._core_api._ensure_initialized()
+        response = await self._core_api._get_raw(path)
+        data = await _get_response_json(response)
+        return {"status": response.status, "data": data}
+
+    async def set_endpoint_config(
+        self, path: str, data: dict, action: str | None = None
+    ) -> Any:
+        """对指定端点执行原始 POST，data 作为顶层 data，action 可选。"""
+        return await self._core_api.post(
+            path, data, extra_data=({"action": action} if action else None)
+        )
+
+    async def get_config(self, path: str) -> Any:
+        """GET 配置端点，返回解析后的 JSON（dict / list）。"""
+        return await self._core_api.get(path)
+
+    async def update_config(
+        self, path: str, updates: dict[str, Any], action: str | None = "update"
+    ) -> dict[str, Any]:
+        """GET 完整对象 → 覆盖 updates 中的字段 → POST。
+
+        GET 返回的不是 dict，或用户提供的字段在对象中不存在时抛
+        InvalidActionError，避免把错误的 payload 写进路由器。
+        """
+        config = await self._core_api.get(path)
+        if not isinstance(config, dict):
+            raise InvalidActionError(
+                f"端点 {path} 未返回配置对象，当前固件可能不支持该功能"
+            )
+        missing = [key for key in updates if key not in config]
+        if missing:
+            raise InvalidActionError(
+                f"字段 {missing} 不在 {path} 的返回中，可用字段：{sorted(config.keys())}"
+            )
+        config.update(updates)
+        await self._core_api.post(
+            path, config, extra_data=({"action": action} if action else None)
+        )
+        return config
+
+    # ---------------------------
+    #   WiFi / SSID
+    # ---------------------------
+
+    async def set_wifi_radio_enabled(self, frequency: str, enabled: bool) -> None:
+        """按频段开关 WiFi 射频。
+
+        wlanradio 返回射频列表；按 FrequencyBand 匹配目标频段，改动其中
+        首个含 "Enable" 的字段后整体回写该射频对象（字段名由 GET 返回推断）。
+        """
+        radios = self._coerce_list(await self._core_api.get(URL_WLAN_RADIO))
+        if not radios:
+            raise InvalidActionError(
+                f"端点 {URL_WLAN_RADIO} 未返回射频列表，当前固件可能不支持该功能"
+            )
+        target = next(
+            (
+                item
+                for item in radios
+                if frequency.lower() in str(item.get("FrequencyBand", "")).lower()
+            ),
+            None,
+        )
+        if target is None:
+            available = [item.get("FrequencyBand") for item in radios]
+            raise InvalidActionError(
+                f"未找到频段 {frequency} 的射频配置，可用频段：{available}"
+            )
+        enable_key = next((key for key in target if "enable" in key.lower()), None)
+        if enable_key is None:
+            raise InvalidActionError(
+                f"未找到射频使能字段，可用字段：{sorted(target.keys())}"
+            )
+        target[enable_key] = enabled
+        await self._core_api.post(URL_WLAN_RADIO, target)
+
+    async def set_wps_enabled(self, enabled: bool) -> None:
+        """开关 WPS（字段名 WpsEnable 已由逆向确认）。"""
+        await self._core_api.post(URL_WPS_SWITCH, {"WpsEnable": enabled})
+
+    # ---------------------------
+    #   家庭安全（防暴力破解 + 防蹭网）
+    # ---------------------------
+
+    async def get_homesec(self) -> dict[str, Any]:
+        """合并返回防暴力破解与防蹭网配置。"""
+        abfa = await self._core_api.get(URL_HOMESEC_ABFA)
+        stealnet = await self._core_api.get(URL_HOMESEC_STEALNET)
+        return {"abfa": abfa, "stealnet": stealnet}
+
+    async def set_homesec(
+        self,
+        abfa_enabled: bool | None = None,
+        stealnet_enabled: bool | None = None,
+    ) -> None:
+        """分别设置家庭安全的两个子功能的开关。"""
+        if abfa_enabled is not None:
+            await self.update_config(
+                URL_HOMESEC_ABFA, {"Enable": abfa_enabled}, action="update"
+            )
+        if stealnet_enabled is not None:
+            await self.update_config(
+                URL_HOMESEC_STEALNET, {"Enable": stealnet_enabled}, action="update"
+            )
+
+    # ---------------------------
+    #   访客网络补充（限速 / 休息时间）
+    # ---------------------------
+
+    async def set_guest_network_limit_rate(
+        self,
+        enabled: bool,
+        peak_rate: int | None = None,
+        down_peak_rate: int | None = None,
+    ) -> None:
+        """设置访客网络限速（字段名 Enable/PeakRate/X_DownPeakRate 来自逆向）。"""
+        updates: dict[str, Any] = {"Enable": enabled}
+        if peak_rate is not None:
+            updates["PeakRate"] = int(peak_rate)
+        if down_peak_rate is not None:
+            updates["X_DownPeakRate"] = int(down_peak_rate)
+        await self.update_config(URL_GUEST_NETWORK_LIMIT_RATE, updates, action="update")
+
+    # ---------------------------
+    #   系统时间 / 自动升级 / 语言
+    # ---------------------------
+
+    async def set_auto_upgrade(
+        self,
+        enabled: bool,
+        start_time: str | None = None,
+        end_time: str | None = None,
+    ) -> None:
+        """设置自动升级（字段名 Enable/StartTime/EndTime 来自逆向）。"""
+        updates: dict[str, Any] = {"Enable": enabled}
+        if start_time is not None:
+            updates["StartTime"] = start_time
+        if end_time is not None:
+            updates["EndTime"] = end_time
+        await self.update_config(URL_AUTO_UPGRADE, updates, action="update")
+
+    async def check_auto_upgrade(self) -> Any:
+        """触发一次在线升级检查（action=check 已由逆向确认）。"""
+        return await self.set_endpoint_config(URL_ONLINE_UPGRADE, {}, action="check")
+
+    async def set_language(self, language: str) -> None:
+        """切换系统语言（字段名 Language 为推断值，待真机验证）。"""
+        await self._core_api.post(URL_LANGUAGE, {"Language": language})
+
+    # ---------------------------
+    #   诊断 / 中继 / 互联
+    # ---------------------------
+
+    async def trigger_wifi_scan(self) -> Any:
+        """触发一次周边 WiFi 扫描。"""
+        return await self.set_endpoint_config(URL_WIFI_SCAN, {})
+
+    async def set_repeater_dial(self) -> None:
+        """触发中继拨号（action=update 已由逆向确认）。"""
+        await self.set_endpoint_config(URL_REPEATER_DIAL, {}, action="update")
+
+    async def set_slave_setup(self, allow: bool) -> None:
+        """设置是否允许被其他设备组网（字段名 hilink_allow 已由逆向确认）。"""
+        await self._core_api.post(URL_SLAVE_SETUP, {"hilink_allow": allow})
+
+    async def get_hilink_status(self) -> Any:
+        """hilink_status 为 POST 型查询接口。"""
+        return await self.set_endpoint_config(URL_HILINK_STATUS, {})
+
+    async def get_multi_host_info(self) -> Any:
+        """MultiHostInfo 为 POST 型查询接口。"""
+        return await self.set_endpoint_config(URL_MULTI_HOST_INFO, {})
 
