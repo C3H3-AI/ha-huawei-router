@@ -79,3 +79,332 @@ wan_reconnect:
   name: WAN 重拨
   description: 触发 PPPoE WAN 断开并重新拨号（短暂断网）。
   fields: {}
+port_mapping_state:
+  name: 设置端口映射开关
+  description: 启用或禁用一条端口映射规则。先用 port_mapping_list 查到 id，再用此服务开关。
+  fields:
+    port_mapping_id:
+      required: true
+      example: "InternetGatewayDevice.Services.X_Portmapping.1."
+      selector:
+        text
+    enabled:
+      required: true
+      example: true
+      default: true
+      selector:
+        boolean
+port_mapping_add:
+  name: 新增端口映射
+  description: 在路由器上新增一条端口映射规则（自动创建 Application 对象并绑定协议/端口）。
+  fields:
+    name:
+      required: true
+      example: "my_rule"
+      selector:
+        text:
+    mac_address:
+      required: true
+      example: "AA:BB:CC:DD:EE:FF"
+      selector:
+        text:
+    host_ip:
+      required: true
+      example: "192.168.3.100"
+      selector:
+        text:
+    protocol:
+      required: false
+      example: "TCP"
+      default: "TCP"
+      selector:
+        select:
+          options:
+            - "TCP"
+            - "UDP"
+    external_port:
+      required: true
+      example: 8123
+      selector:
+        number:
+          min: 1
+          max: 65535
+          mode: box
+    internal_port:
+      required: false
+      example: 8123
+      selector:
+        number:
+          min: 1
+          max: 65535
+          mode: box
+    enabled:
+      required: false
+      example: true
+      default: true
+      selector:
+        boolean:
+    host_name:
+      required: false
+      example: "我的设备"
+      selector:
+        text:
+port_mapping_remove:
+  name: 删除端口映射
+  description: 根据 port_mapping_id 删除一条端口映射规则。先用 port_mapping_list 查到 id。
+  fields:
+    port_mapping_id:
+      required: true
+      example: "InternetGatewayDevice.Services.X_Portmapping.1."
+      selector:
+        text
+port_mapping_list:
+  name: 列出端口映射
+  description: 列出所有端口映射规则（含 id、名称、MAC、IP、端口与启用状态）。
+  fields: {}
+port_trigger_state:
+  name: 设置端口触发开关
+  description: 启用或禁用一条端口触发（Port Triggering）规则。先用 port_trigger_list 查到 id，再用此服务开关。
+  fields:
+    port_trigger_id:
+      required: true
+      example: "InternetGatewayDevice.Services.X_Porttrigger.1."
+      selector:
+        text
+    enabled:
+      required: true
+      example: true
+      default: true
+      selector:
+        boolean
+port_trigger_add:
+  name: 新增端口触发
+  description: 新增一条端口触发（Port Triggering）规则。需要绑定 ApplicationID（对应端口和协议）。先用 port_trigger_list 拿到已有 ApplicationID 参考。
+  fields:
+    name:
+      required: true
+      example: "my_app"
+      selector:
+        text
+    application_id:
+      required: true
+      example: "InternetGatewayDevice.Services.X_Application.2."
+      selector:
+        text
+    enabled:
+      required: false
+      example: false
+      default: false
+      selector:
+        boolean
+port_trigger_remove:
+  name: 删除端口触发
+  description: 根据 port_trigger_id 删除一条端口触发规则。先用 port_trigger_list 查到 id。
+  fields:
+    port_trigger_id:
+      required: true
+      example: "InternetGatewayDevice.Services.X_Porttrigger.1."
+      selector:
+        text
+port_trigger_list:
+  name: 列出端口触发规则
+  description: 列出所有端口触发（Port Triggering）规则。
+  fields: {}
+upnp_port_mapping_list:
+  name: 列出 UPnP 端口映射
+  description: 列出所有通过 UPnP 自动创建的端口映射规则。
+  fields: {}
+dhcp_static_lease_list:
+  name: 列出 DHCP 静态 IP 保留
+  description: 列出所有 DHCP 静态 IP 保留（MAC-IP 绑定）条目。
+  fields: {}
+dhcp_static_lease_add:
+  name: 新增 DHCP 静态 IP 保留
+  description: 为指定 MAC 地址保留一个固定 IP。
+  fields:
+    ip_address:
+      required: true
+      example: "192.168.3.150"
+      selector:
+        text:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+    enabled:
+      required: false
+      example: true
+      default: true
+      selector:
+        boolean:
+dhcp_static_lease_remove:
+  name: 删除 DHCP 静态 IP 保留
+  description: 根据 lease_id 删除一条 DHCP 静态保留。先用 dhcp_static_lease_list 查到 id。
+  fields:
+    lease_id:
+      required: true
+      example: "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.DHCPStaticAddress.1."
+      selector:
+        text:
+dhcp_static_lease_state:
+  name: 设置 DHCP 静态保留开关
+  description: 启用或禁用一条 DHCP 静态保留。先用 dhcp_static_lease_list 查到 id。
+  fields:
+    lease_id:
+      required: true
+      example: "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.DHCPStaticAddress.1."
+      selector:
+        text:
+    enabled:
+      required: true
+      example: true
+      default: true
+      selector:
+        boolean:
+upnp_set_enabled:
+  name: 设置 UPnP 开关
+  description: 启用或禁用路由器 UPnP。
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+ipv6_set_enabled:
+  name: 设置 IPv6 开关
+  description: 启用或禁用路由器 IPv6。
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+band_steering_set_enabled:
+  name: 设置双频优选
+  description: 启用或禁用双频优选（2.4G/5G 自动切换）。
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+smart_connect_set_enabled:
+  name: 设置智能连接
+  description: 启用或禁用智能连接（多频合一）。
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+firewall_set_level:
+  name: 设置防火墙等级
+  description: 设置路由器防火墙等级（Disable/Low/Medium/High）。
+  fields:
+    level:
+      required: true
+      example: "Medium"
+      selector:
+        select:
+          options:
+            - "Disable"
+            - "Low"
+            - "Medium"
+            - "High"
+dmz_set:
+  name: 设置 DMZ 主机
+  description: 启用或禁用 DMZ 主机，并指定内网 IP。
+  fields:
+    enabled:
+      required: true
+      example: false
+      selector:
+        boolean:
+    ip_address:
+      required: false
+      example: "192.168.3.100"
+      selector:
+        text:
+scheduled_reboot_set:
+  name: 设置定时重启
+  description: 启用或禁用定时重启，并指定重启时间（HH:MM）。
+  fields:
+    enabled:
+      required: true
+      example: false
+      selector:
+        boolean:
+    reboot_time:
+      required: false
+      example: "04:00"
+      selector:
+        text:
+ddns_status:
+  name: 查询 DDNS 状态
+  description: 查询 DDNS 动态域名配置与同步状态。
+  fields: {}
+ddns_set_enabled:
+  name: 设置 DDNS 开关
+  description: 启用或禁用 DDNS 动态域名。
+  fields:
+    enabled:
+      required: true
+      example: true
+      selector:
+        boolean:
+device_set_name:
+  name: 修改设备名称
+  description: 修改已连接设备的显示名称（对应路由器列表模式下的改名，最多 64 字符）。
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+    name:
+      required: true
+      example: "客厅电视"
+      selector:
+        text:
+device_set_rate_limit:
+  name: 设置设备限速
+  description: 设置单台设备的 QoS 限速（对应路由器列表模式下的限速）。先用 enabled 开启限速，再设置上下行速率。
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+    enabled:
+      required: false
+      example: true
+      selector:
+        boolean:
+    upload_kbps:
+      required: false
+      example: 1024
+      selector:
+        number:
+          min: 100
+          max: 1000000
+          unit_of_measurement: "Kbps"
+          mode: box
+    download_kbps:
+      required: false
+      example: 10240
+      selector:
+        number:
+          min: 100
+          max: 1000000
+          unit_of_measurement: "Kbps"
+          mode: box
+device_remove:
+  name: 删除设备
+  description: 从路由器已连接设备列表中删除一台设备（对应列表模式下的删除/拉黑）。
+  fields:
+    mac_address:
+      required: true
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
