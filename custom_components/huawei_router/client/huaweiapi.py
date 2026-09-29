@@ -2,6 +2,8 @@
 
 
 
+import asyncio
+
 import logging
 
 from typing import Any, Final, Iterable, Tuple
@@ -79,6 +81,8 @@ from .const import (
     URL_TIME_CONTROL,
 
     URL_URL_FILTER,
+
+    URL_WAN,
 
     URL_WANDETECT,
 
@@ -534,9 +538,79 @@ class HuaweiApi:
 
             await self._core_api.post(URL_REBOOT, {})
 
+        elif action == Action.WAN_RECONNECT:
+
+            await self.wan_reconnect()
+
         else:
 
             raise UnsupportedActionError(f"Unsupported action name: {action}")
+
+
+
+    async def wan_reconnect(self) -> None:
+
+        """Perform a PPPoE disconnect + reconnect cycle.
+
+        Uses the WAN connection ID from URL_WAN_INFO and tries common
+        HiLink API patterns for triggering a re-dial. Falls back through
+        multiple endpoint variations until one works.
+        """
+
+        # First, get the WAN connection ID (e.g. "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.")
+        wan_info = await self._core_api.get(URL_WAN_INFO)
+        wan_id = wan_info.get("ID", "")
+
+        self._logger.info("Starting WAN reconnect cycle (WAN ID: %s)", wan_id)
+
+        # Strategy 1: POST action=disconnect, wait, POST action=connect (HiLink style)
+        try:
+            if wan_id:
+                await self._core_api.post(
+                    URL_WAN,
+                    {"ID": wan_id},
+                    extra_data={"action": "disconnect"},
+                )
+                self._logger.info("WAN disconnect sent, waiting 5s...")
+                await asyncio.sleep(5)
+
+                await self._core_api.post(
+                    URL_WAN,
+                    {"ID": wan_id},
+                    extra_data={"action": "connect"},
+                )
+                self._logger.info("WAN reconnect (strategy 1: disconnect+connect) succeeded")
+                return
+        except Exception as exc:
+            self._logger.debug("WAN reconnect strategy 1 failed: %s", exc)
+
+        # Strategy 2: Single POST action=reconnect
+        try:
+            await self._core_api.post(
+                URL_WAN,
+                {"ID": wan_id} if wan_id else {},
+                extra_data={"action": "reconnect"},
+            )
+            self._logger.info("WAN reconnect (strategy 2: action=reconnect) succeeded")
+            return
+        except Exception as exc:
+            self._logger.debug("WAN reconnect strategy 2 failed: %s", exc)
+
+        # Strategy 3: Enable=False then Enable=True
+        try:
+            await self._core_api.post(URL_WAN, {"ID": wan_id, "Enable": False})
+            self._logger.info("WAN disabled, waiting 5s...")
+            await asyncio.sleep(5)
+
+            await self._core_api.post(URL_WAN, {"ID": wan_id, "Enable": True})
+            self._logger.info("WAN reconnect (strategy 3: enable toggle) succeeded")
+            return
+        except Exception as exc:
+            self._logger.debug("WAN reconnect strategy 3 failed: %s", exc)
+
+        raise UnsupportedActionError(
+            "WAN reconnect failed: tried all 3 strategies, none worked"
+        )
 
 
 

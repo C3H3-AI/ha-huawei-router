@@ -117,6 +117,8 @@ class ServiceName(StrEnum):
     PORT_MAPPING_ADD = "port_mapping_add"
     PORT_MAPPING_REMOVE = "port_mapping_remove"
     PORT_MAPPING_LIST = "port_mapping_list"
+    # WAN 重拨服务
+    WAN_RECONNECT = "wan_reconnect"
 
 
 
@@ -217,6 +219,10 @@ SERVICES = [
     ),
     ServiceDescription(
         name=ServiceName.PORT_MAPPING_LIST,
+        schema=vol.Schema({}),
+    ),
+    ServiceDescription(
+        name=ServiceName.WAN_RECONNECT,
         schema=vol.Schema({}),
     ),
 ]
@@ -750,6 +756,36 @@ async def _async_port_mapping_list(hass: HomeAssistant, service: ServiceCall):
 
 
 # ---------------------------
+#   _async_wan_reconnect
+# ---------------------------
+async def _async_wan_reconnect(hass: HomeAssistant, service: ServiceCall):
+    """Service to trigger a PPPoE WAN disconnect + reconnect cycle."""
+    _LOGGER.info("Service '%s' called - initiating WAN reconnect", service.service)
+
+    coordinator = None
+    for key, item in hass.data[DOMAIN].items():
+        if key == DATA_KEY_SERVICES:
+            continue
+        coordinator = item.get(DATA_KEY_COORDINATOR)
+        if coordinator and isinstance(coordinator, HuaweiDataUpdateCoordinator):
+            break
+
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+
+    try:
+        from .client.classes import Action
+
+        await coordinator.primary_router_api.execute_action(Action.WAN_RECONNECT)
+        _LOGGER.info("WAN reconnect cycle completed successfully")
+
+    except HomeAssistantError:
+        raise
+    except Exception as ex:
+        raise HomeAssistantError(f"WAN reconnect failed: {ex}") from ex
+
+
+# ---------------------------
 #   _change_instances_count
 # ---------------------------
 def _change_instances_count(hass: HomeAssistant, delta: int) -> int:
@@ -834,6 +870,9 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         elif service_name == ServiceName.PORT_MAPPING_LIST:
             return await _async_port_mapping_list(hass, service)
+
+        elif service_name == ServiceName.WAN_RECONNECT:
+            await _async_wan_reconnect(hass, service)
 
         else:
 
