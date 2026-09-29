@@ -6,13 +6,15 @@
     "zone"
   ],
   "codeowners": [
-    "@vmakeev"
+    "@c3h3-ci"
   ],
   "config_flow": true,
   "documentation": "https://github.com/c3h3-ci/ha-huawei-router",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/c3h3-ci/ha-huawei-router/issues",
-  "requirements": ["pycryptodome>=3.12.0"],
+  "requirements": [
+    "pycryptodome>=3.12.0"
+  ],
   "version": "1.12.0"
 }
