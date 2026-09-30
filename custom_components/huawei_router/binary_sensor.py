@@ -31,6 +31,9 @@ _LOGGER = logging.getLogger(__name__)
 _FUNCTION_DISPLAYED_NAME_WAN: Final = "互联网连接"
 _FUNCTION_UID_WAN: Final = "internet_connection"
 
+_FUNCTION_DISPLAYED_NAME_NTP: Final = "NTP同步"
+_FUNCTION_UID_NTP: Final = "sensor_ntp_synced"
+
 ENTITY_DOMAIN: Final = "binary_sensor"
 
 
@@ -62,6 +65,17 @@ class HuaweiWanSensorEntityDescription(HuaweiBinarySensorEntityDescription):
     )
 
 
+def _ntp_is_synced(coordinator: HuaweiDataUpdateCoordinator) -> bool | None:
+    """Return whether the router clock is NTP-synchronised.
+
+    Backed by ``api/ntwk/sntp``, verified on Q6 网线版 (WS8000-16).
+    """
+    status = coordinator.get_ntp_status()
+    if status is None:
+        return None
+    return status.synchronized
+
+
 # ---------------------------
 #   async_setup_entry
 # ---------------------------
@@ -87,6 +101,23 @@ async def async_setup_entry(
             ),
         )
     ]
+
+    # NTP 同步状态（端点已真机验证）
+    if coordinator.get_ntp_status() is not None:
+        sensors.append(
+            HuaweiNtpBinarySensor(
+                coordinator,
+                HuaweiBinarySensorEntityDescription(
+                    key="ntp_synced",
+                    icon="mdi:clock-check",
+                    name=_FUNCTION_DISPLAYED_NAME_NTP,
+                    device_mac=None,
+                    device_name=None,
+                    function_uid=_FUNCTION_UID_NTP,
+                    function_name=_FUNCTION_DISPLAYED_NAME_NTP,
+                ),
+            )
+        )
 
     async_add_entities(sensors)
 
@@ -165,3 +196,31 @@ class HuaweiWanBinarySensor(HuaweiBinarySensor):
         self._attr_extra_state_attributes["download_rate"] = get_readable_rate(wan_info.download_rate)
 
         super()._handle_coordinator_update()
+
+
+# ---------------------------
+#   HuaweiNtpBinarySensor
+# ---------------------------
+class HuaweiNtpBinarySensor(HuaweiBinarySensor):
+    """NTP synchronisation state of the router."""
+
+    entity_description: HuaweiBinarySensorEntityDescription
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Pull the latest NTP state from the coordinator."""
+        self._attr_is_on = _ntp_is_synced(self.coordinator)
+        super()._handle_coordinator_update()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        """Expose the NTP servers and raw status string."""
+        status = self.coordinator.get_ntp_status()
+        if status is None:
+            return {}
+        return {
+            "status": status.status,
+            "server_primary": status.server_primary,
+            "server_secondary": status.server_secondary,
+        }

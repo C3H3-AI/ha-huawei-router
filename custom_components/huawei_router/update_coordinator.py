@@ -95,9 +95,19 @@ from .client.classes import (
 
     HuaweiConnectionInfo,
 
+    HuaweiChannelInfo,
+
+    HuaweiDeviceCount,
+
     HuaweiDeviceNode,
 
+    HuaweiEthPort,
+
     HuaweiFilterInfo,
+
+    HuaweiNtpStatus,
+
+    HuaweiProcessStatus,
 
     HuaweiRouterInfo,
 
@@ -660,6 +670,13 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
         self._wan_info: HuaweiConnectionInfo | None = None
 
+        # 健康监控数据（端点均已真机验证）
+        self._process_status: HuaweiProcessStatus | None = None
+        self._device_count: HuaweiDeviceCount | None = None
+        self._ntp_status: HuaweiNtpStatus | None = None
+        self._channel_info: HuaweiChannelInfo | None = None
+        self._eth_ports: list[HuaweiEthPort] = []
+
 
 
         self._config: ConfigEntry = config_entry
@@ -956,6 +973,31 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         return self._wan_info
 
 
+    # ---------------------------
+    #   健康监控访问器
+    # ---------------------------
+
+    def get_process_status(self) -> HuaweiProcessStatus | None:
+        """Return aggregate CPU / memory usage."""
+        return self._process_status
+
+    def get_device_count(self) -> HuaweiDeviceCount | None:
+        """Return connected-device counters."""
+        return self._device_count
+
+    def get_ntp_status(self) -> HuaweiNtpStatus | None:
+        """Return NTP synchronisation state."""
+        return self._ntp_status
+
+    def get_channel_info(self) -> HuaweiChannelInfo | None:
+        """Return the current channel of each WiFi band."""
+        return self._channel_info
+
+    def get_eth_ports(self) -> list[HuaweiEthPort]:
+        """Return every physical Ethernet port with its negotiated speed."""
+        return self._eth_ports
+
+
     def get_device_uptime(self, device_mac: MAC_ADDR) -> int | None:
         """Return uptime for a specific device (e.g., satellite router)."""
         device = self._connected_devices.get(device_mac)
@@ -1064,6 +1106,8 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         await self._update_router_infos()
 
         await self._update_wan_info()
+
+        await self._update_health_info()
 
         await self._update_url_filter_info()
 
@@ -1301,6 +1345,46 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         self._wan_info = await self.primary_router_api.get_wan_connection_info()
 
         self._logger.debug("Wan info updated")
+
+    @suppress_update_exception("Can not update health info: %s")
+
+    async def _update_health_info(self) -> None:
+        """Fetch router health metrics.
+
+        Every endpoint here was verified against a real Q6 网线版
+        (WS8000-16, 6.1.0.20) before being wired in — none are guessed.
+        Each call is individually guarded so one unsupported endpoint on a
+        different model cannot blank the others.
+        """
+        self._logger.debug("Updating health info")
+        api = self.primary_router_api
+
+        try:
+            self._process_status = await api.get_process_status()
+        except Exception as ex:  # noqa: BLE001 - 单端点失败不应影响其它指标
+            self._logger.debug("processstatus unavailable: %s", ex)
+
+        try:
+            self._device_count = await api.get_device_count()
+        except Exception as ex:  # noqa: BLE001
+            self._logger.debug("device_count unavailable: %s", ex)
+
+        try:
+            self._ntp_status = await api.get_ntp_status()
+        except Exception as ex:  # noqa: BLE001
+            self._logger.debug("sntp unavailable: %s", ex)
+
+        try:
+            self._channel_info = await api.get_channel_info()
+        except Exception as ex:  # noqa: BLE001
+            self._logger.debug("channelinfo unavailable: %s", ex)
+
+        try:
+            self._eth_ports = list(await api.get_eth_ports())
+        except Exception as ex:  # noqa: BLE001
+            self._logger.debug("ethnegotiation unavailable: %s", ex)
+
+        self._logger.debug("Health info updated")
 
 
 
