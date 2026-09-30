@@ -87,13 +87,13 @@ port_mapping_state:
       required: true
       example: "InternetGatewayDevice.Services.X_Portmapping.1."
       selector:
-        text
+        text:
     enabled:
       required: true
       example: true
       default: true
       selector:
-        boolean
+        boolean:
 port_mapping_add:
   name: 新增端口映射
   description: 在路由器上新增一条端口映射规则（自动创建 Application 对象并绑定协议/端口）。
@@ -157,7 +157,7 @@ port_mapping_remove:
       required: true
       example: "InternetGatewayDevice.Services.X_Portmapping.1."
       selector:
-        text
+        text:
 port_mapping_list:
   name: 列出端口映射
   description: 列出所有端口映射规则（含 id、名称、MAC、IP、端口与启用状态）。
@@ -170,13 +170,13 @@ port_trigger_state:
       required: true
       example: "InternetGatewayDevice.Services.X_Porttrigger.1."
       selector:
-        text
+        text:
     enabled:
       required: true
       example: true
       default: true
       selector:
-        boolean
+        boolean:
 port_trigger_add:
   name: 新增端口触发
   description: 新增一条端口触发（Port Triggering）规则。需要绑定 ApplicationID（对应端口和协议）。先用 port_trigger_list 拿到已有 ApplicationID 参考。
@@ -185,18 +185,18 @@ port_trigger_add:
       required: true
       example: "my_app"
       selector:
-        text
+        text:
     application_id:
       required: true
       example: "InternetGatewayDevice.Services.X_Application.2."
       selector:
-        text
+        text:
     enabled:
       required: false
       example: false
       default: false
       selector:
-        boolean
+        boolean:
 port_trigger_remove:
   name: 删除端口触发
   description: 根据 port_trigger_id 删除一条端口触发规则。先用 port_trigger_list 查到 id。
@@ -205,7 +205,7 @@ port_trigger_remove:
       required: true
       example: "InternetGatewayDevice.Services.X_Porttrigger.1."
       selector:
-        text
+        text:
 port_trigger_list:
   name: 列出端口触发规则
   description: 列出所有端口触发（Port Triggering）规则。
@@ -408,3 +408,696 @@ device_remove:
       example: "11:22:33:AA:BB:CC"
       selector:
         text:
+api_get:
+  name: 通用 API 读取
+  description: '对白名单中的任意真实 API 端点执行原始 GET，返回 {"status": <HTTP 状态码>, "data": <响应 JSON>}。绕过内部重登录逻辑，适合批量探测。'
+  fields:
+    endpoint:
+      name: 端点
+      description: RAW_API_ENDPOINTS 中的端点短名。
+      required: true
+      example: "lan"
+      selector:
+        select:
+          options:
+            - "MultiHostInfo"
+            - "RepeaterDial"
+            - "RepeaterDial_scram"
+            - "WlanGuideBasic"
+            - "access_auth"
+            - "alg"
+            - "app_wizard"
+            - "applicationitems"
+            - "autoupgrade"
+            - "backhaul"
+            - "channelinfo"
+            - "client_heartbeat"
+            - "custom_report"
+            - "deviceinfo_wizard"
+            - "diagnose_button"
+            - "diagnose_crash"
+            - "diagnose_led"
+            - "ethnegotiation"
+            - "forceupg"
+            - "forceupgcfg"
+            - "forceupglater"
+            - "fwmacfilter"
+            - "getmacaddress"
+            - "guest_network"
+            - "guest_network_limitrate"
+            - "guest_network_resttime"
+            - "guide"
+            - "heartbeat"
+            - "hilink_status"
+            - "homesec_abfa"
+            - "homesec_stealnet"
+            - "hotaservice"
+            - "httpdiagnose"
+            - "iptv"
+            - "ipv6_lan"
+            - "ipv6_wan"
+            - "lan"
+            - "lan_all"
+            - "lan_server"
+            - "language"
+            - "mirror"
+            - "multi_ssid"
+            - "netdiskcode"
+            - "netdiskguide"
+            - "netdiskinfo"
+            - "onlinestate"
+            - "onlineupg"
+            - "plc_web_certification"
+            - "privacypolicy"
+            - "processstatus"
+            - "provcode"
+            - "pwdrule"
+            - "repeaterdiag"
+            - "repeaterstate"
+            - "restorestate"
+            - "slave_setup"
+            - "smartpush_autoupg"
+            - "smartvpn"
+            - "smartvpnurl"
+            - "sntp"
+            - "swan"
+            - "tunnel"
+            - "uploadconfigfileresult"
+            - "user_logout"
+            - "useraccount"
+            - "userbehavior"
+            - "wan"
+            - "wandiagnose"
+            - "wanlearnconfig"
+            - "wanlearntrigerloopmac"
+            - "wifiscan"
+            - "wifiscanresult"
+            - "wizard_wifi"
+            - "wlan_time_switch_list"
+            - "wlanelink"
+            - "wlanmode"
+            - "wlanpowertimeswitch"
+            - "wlanradio"
+            - "wlantimeaccelerate"
+            - "wlanwifisync"
+            - "wlanwps"
+            - "wps_switch"
+            - "xlink_lock_net"
+api_set:
+  name: 通用 API 写入
+  description: 对白名单中的任意真实 API 端点执行原始 POST，data 作为请求体，action 可选。
+  fields:
+    endpoint:
+      name: 端点
+      description: RAW_API_ENDPOINTS 中的端点短名。
+      required: true
+      example: "sntp"
+      selector:
+        select:
+          options:
+            - "MultiHostInfo"
+            - "RepeaterDial"
+            - "RepeaterDial_scram"
+            - "WlanGuideBasic"
+            - "access_auth"
+            - "alg"
+            - "app_wizard"
+            - "applicationitems"
+            - "autoupgrade"
+            - "backhaul"
+            - "channelinfo"
+            - "client_heartbeat"
+            - "custom_report"
+            - "deviceinfo_wizard"
+            - "diagnose_button"
+            - "diagnose_crash"
+            - "diagnose_led"
+            - "ethnegotiation"
+            - "forceupg"
+            - "forceupgcfg"
+            - "forceupglater"
+            - "fwmacfilter"
+            - "getmacaddress"
+            - "guest_network"
+            - "guest_network_limitrate"
+            - "guest_network_resttime"
+            - "guide"
+            - "heartbeat"
+            - "hilink_status"
+            - "homesec_abfa"
+            - "homesec_stealnet"
+            - "hotaservice"
+            - "httpdiagnose"
+            - "iptv"
+            - "ipv6_lan"
+            - "ipv6_wan"
+            - "lan"
+            - "lan_all"
+            - "lan_server"
+            - "language"
+            - "mirror"
+            - "multi_ssid"
+            - "netdiskcode"
+            - "netdiskguide"
+            - "netdiskinfo"
+            - "onlinestate"
+            - "onlineupg"
+            - "plc_web_certification"
+            - "privacypolicy"
+            - "processstatus"
+            - "provcode"
+            - "pwdrule"
+            - "repeaterdiag"
+            - "repeaterstate"
+            - "restorestate"
+            - "slave_setup"
+            - "smartpush_autoupg"
+            - "smartvpn"
+            - "smartvpnurl"
+            - "sntp"
+            - "swan"
+            - "tunnel"
+            - "uploadconfigfileresult"
+            - "user_logout"
+            - "useraccount"
+            - "userbehavior"
+            - "wan"
+            - "wandiagnose"
+            - "wanlearnconfig"
+            - "wanlearntrigerloopmac"
+            - "wifiscan"
+            - "wifiscanresult"
+            - "wizard_wifi"
+            - "wlan_time_switch_list"
+            - "wlanelink"
+            - "wlanmode"
+            - "wlanpowertimeswitch"
+            - "wlanradio"
+            - "wlantimeaccelerate"
+            - "wlanwifisync"
+            - "wlanwps"
+            - "wps_switch"
+            - "xlink_lock_net"
+    data:
+      name: 请求数据
+      description: 作为 POST 顶层 data 的对象。
+      required: true
+      example: {}
+      selector:
+        object:
+    action:
+      name: 动作
+      description: 可选的动作标识，路由器按此执行 create/update/delete 等操作。
+      required: false
+      example: "update"
+      selector:
+        select:
+          options:
+            - "create"
+            - "update"
+            - "delete"
+            - "SendSettings"
+            - "check"
+wifi_radio_get:
+  name: 查询射频配置
+  description: 读取 wlanradio 端点，返回各频段射频配置。
+  fields: {}
+wifi_radio_set_enabled:
+  name: 设置射频开关
+  description: 按频段启用或禁用 WiFi 射频（字段名由 GET 返回推断）。
+  fields:
+    frequency:
+      name: 频段
+      description: 目标频段。
+      required: true
+      example: "2.4G"
+      selector:
+        select:
+          options:
+            - "2.4G"
+            - "5G"
+    enabled:
+      name: 启用
+      description: 是否启用该射频。
+      required: true
+      example: true
+      selector:
+        boolean:
+wlan_wps_get:
+  name: 查询 WPS 配置
+  description: 读取 wlanwps 端点，返回 WPS 配置。
+  fields: {}
+wps_set_enabled:
+  name: 设置 WPS 开关
+  description: 启用或禁用 WPS（字段 WpsEnable）。
+  fields:
+    enabled:
+      name: 启用
+      description: 是否启用 WPS。
+      required: true
+      example: true
+      selector:
+        boolean:
+multi_ssid_list:
+  name: 列出多 SSID
+  description: 列出路由器多个 SSID 的配置。
+  fields: {}
+wifi_timing_accelerate_get:
+  name: 查询 WiFi 加速配置
+  description: 读取 wlanTimingAccelerate 端点，返回 WiFi 加速（定时提速）配置。
+  fields: {}
+wifi_timing_accelerate_set:
+  name: 设置 WiFi 加速
+  description: 启用或禁用 WiFi 加速，可通过 data 覆盖其他字段。
+  fields:
+    enabled:
+      name: 启用
+      description: 是否启用 WiFi 加速。
+      required: true
+      example: true
+      selector:
+        boolean:
+    data:
+      name: 其他字段
+      description: 需要一并覆盖的原始字段对象。
+      required: false
+      example: {}
+      selector:
+        object:
+wlan_wifi_sync_get:
+  name: 查询 WiFi 同步配置
+  description: 读取 wlanwifisync 端点，返回 WiFi 同步配置。
+  fields: {}
+lan_config_get:
+  name: 查询 LAN 配置
+  description: 读取 lan 端点，返回 LAN 基础配置。
+  fields: {}
+lan_config_set:
+  name: 设置 LAN 配置
+  description: 修改 LAN 的 IP、子网掩码或 DHCP 开关（GET→改→POST）。
+  fields:
+    ip_address:
+      name: LAN IP
+      description: 路由器 LAN 口 IP 地址。
+      required: false
+      example: "192.168.3.1"
+      selector:
+        text:
+    netmask:
+      name: 子网掩码
+      description: LAN 子网掩码。
+      required: false
+      example: "255.255.255.0"
+      selector:
+        text:
+    dhcp_enabled:
+      name: DHCP 开关
+      description: 是否启用 LAN 侧 DHCP 服务。
+      required: false
+      example: true
+      selector:
+        boolean:
+lan_all_get:
+  name: 查询 LAN 完整配置
+  description: 读取 lan_all 端点，返回 LAN 完整配置。
+  fields: {}
+dhcp_server_get:
+  name: 查询 DHCP 服务配置
+  description: 读取 lan_server 端点，返回 DHCP 服务器配置。
+  fields: {}
+dhcp_server_set:
+  name: 设置 DHCP 服务
+  description: 修改 DHCP 地址池起止、租期或开关（GET→改→POST）。
+  fields:
+    start_ip:
+      name: 起始地址
+      description: DHCP 地址池起始 IP。
+      required: false
+      example: "192.168.3.100"
+      selector:
+        text:
+    end_ip:
+      name: 结束地址
+      description: DHCP 地址池结束 IP。
+      required: false
+      example: "192.168.3.200"
+      selector:
+        text:
+    lease_time:
+      name: 租期
+      description: 租期（秒）。
+      required: false
+      example: 86400
+      selector:
+        number:
+          min: 60
+          max: 604800
+          unit_of_measurement: "s"
+          mode: box
+    enabled:
+      name: 启用
+      description: 是否启用 DHCP 服务。
+      required: false
+      example: true
+      selector:
+        boolean:
+device_type_list:
+  name: 列出设备类型
+  description: 读取 lan_devicetype 端点，返回设备类型列表。
+  fields: {}
+wan_learn_config_get:
+  name: 查询 WAN 学习配置
+  description: 读取 wanlearnconfig 端点（type=notshowpass），返回 WAN 学习配置。
+  fields: {}
+wan_diagnose_get:
+  name: 查询 WAN 诊断
+  description: 读取 wandiagnose 端点，返回 WAN 诊断信息。
+  fields: {}
+ipv6_wan_get:
+  name: 查询 IPv6 WAN 配置
+  description: 读取 ipv6_wan 端点，返回 IPv6 WAN 配置。
+  fields: {}
+ipv6_wan_set:
+  name: 设置 IPv6 WAN 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+ipv6_lan_get:
+  name: 查询 IPv6 LAN 配置
+  description: 读取 ipv6_lan 端点，返回 IPv6 LAN 配置。
+  fields: {}
+ipv6_lan_set:
+  name: 设置 IPv6 LAN 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+alg_get:
+  name: 查询 ALG 配置
+  description: 读取 alg 端点，返回 ALG（应用层网关）配置。
+  fields: {}
+alg_set:
+  name: 设置 ALG 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+tunnel_get:
+  name: 查询隧道配置
+  description: 读取 tunnel 端点，返回隧道配置。
+  fields: {}
+tunnel_set:
+  name: 设置隧道配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+swan_get:
+  name: 查询 SWAN 配置
+  description: 读取 swan 端点，返回 SWAN 配置。
+  fields: {}
+smart_vpn_get:
+  name: 查询 Smart VPN 配置
+  description: 读取 smartvpn 端点，返回 Smart VPN 配置。
+  fields: {}
+smart_vpn_set:
+  name: 设置 Smart VPN 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+iptv_get:
+  name: 查询 IPTV 配置
+  description: 读取 iptv 端点，返回 IPTV 配置。
+  fields: {}
+iptv_set:
+  name: 设置 IPTV 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+mac_filter_list:
+  name: 列出 MAC 过滤
+  description: 读取 fwmacfilter 端点，返回 MAC 过滤列表。
+  fields: {}
+access_auth_get:
+  name: 查询接入认证配置
+  description: 读取 access_auth 端点，返回接入认证配置。
+  fields: {}
+access_auth_set:
+  name: 设置接入认证配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+homesec_get:
+  name: 查询家庭安全配置
+  description: '合并返回家庭安全配置：{"abfa": 防暴力破解, "stealnet": 防蹭网}。'
+  fields: {}
+homesec_set:
+  name: 设置家庭安全配置
+  description: 分别设置防暴力破解与防蹭网的开关。
+  fields:
+    abfa_enabled:
+      name: 防暴力破解
+      description: 是否启用防暴力破解。
+      required: false
+      example: true
+      selector:
+        boolean:
+    stealnet_enabled:
+      name: 防蹭网
+      description: 是否启用防蹭网。
+      required: false
+      example: true
+      selector:
+        boolean:
+xlink_lock_net_get:
+  name: 查询防蹭网配置
+  description: 读取 xlink_lock_net 端点，返回防蹭网配置。
+  fields: {}
+guest_network_limit_rate_get:
+  name: 查询访客网络限速
+  description: 读取 guest_network_limitrate 端点，返回访客网络限速配置。
+  fields: {}
+guest_network_limit_rate_set:
+  name: 设置访客网络限速
+  description: 启用或禁用访客网络限速，并可设置上下行峰值速率（字段 Enable/PeakRate/X_DownPeakRate）。
+  fields:
+    enabled:
+      name: 启用
+      description: 是否启用访客网络限速。
+      required: true
+      example: true
+      selector:
+        boolean:
+    peak_rate:
+      name: 上行峰值
+      description: 上行峰值速率（Kbps）。
+      required: false
+      example: 10000
+      selector:
+        number:
+          min: 1
+          max: 1000000
+          unit_of_measurement: "Kbps"
+          mode: box
+    down_peak_rate:
+      name: 下行峰值
+      description: 下行峰值速率（Kbps）。
+      required: false
+      example: 50000
+      selector:
+        number:
+          min: 1
+          max: 1000000
+          unit_of_measurement: "Kbps"
+          mode: box
+guest_network_rest_time_set:
+  name: 设置访客网络休息时间
+  description: GET 完整对象后覆盖 data 中的字段并回写（guest_network_resttime）。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+ntp_get:
+  name: 查询 NTP 配置
+  description: 读取 sntp 端点，返回 NTP 时间同步配置。
+  fields: {}
+ntp_set:
+  name: 设置 NTP 配置
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+process_status_get:
+  name: 查询进程状态
+  description: 读取 processstatus 端点，返回路由器进程状态。
+  fields: {}
+online_state_get:
+  name: 查询在线状态
+  description: 读取 onlinestate 端点，返回路由器在线状态。
+  fields: {}
+eth_negotiation_get:
+  name: 查询网口协商配置
+  description: 读取 ethnegotiation 端点，返回网口速率/双工协商配置。
+  fields: {}
+auto_upgrade_get:
+  name: 查询自动升级配置
+  description: 读取 autoupgrade 端点，返回自动升级配置。
+  fields: {}
+auto_upgrade_set:
+  name: 设置自动升级
+  description: 启用或禁用自动升级，并可设置升级时间窗（字段 Enable/StartTime/EndTime）。
+  fields:
+    enabled:
+      name: 启用
+      description: 是否启用自动升级。
+      required: true
+      example: true
+      selector:
+        boolean:
+    start_time:
+      name: 开始时间
+      description: 升级时间窗开始（HH:MM）。
+      required: false
+      example: "03:00"
+      selector:
+        text:
+    end_time:
+      name: 结束时间
+      description: 升级时间窗结束（HH:MM）。
+      required: false
+      example: "05:00"
+      selector:
+        text:
+auto_upgrade_check:
+  name: 检查在线升级
+  description: 触发一次在线升级检查（POST onlineupg，action=check）。
+  fields: {}
+password_rule_get:
+  name: 查询密码规则
+  description: 读取 pwdrule 端点，返回密码复杂度规则。
+  fields: {}
+user_account_get:
+  name: 查询用户账号
+  description: 读取 useraccount 端点，返回路由器账号信息。
+  fields: {}
+system_language_set:
+  name: 设置系统语言
+  description: 切换路由器系统语言（POST language/lang）。
+  fields:
+    language:
+      name: 语言
+      description: 语言代码或名称。
+      required: true
+      example: "zh-cn"
+      selector:
+        text:
+wifi_scan:
+  name: 触发 WiFi 扫描
+  description: 触发一次周边 WiFi 扫描（POST wifiscan）。
+  fields: {}
+wifi_scan_result:
+  name: 查询 WiFi 扫描结果
+  description: 读取 wifiscanresult 端点，返回周边 WiFi 扫描结果。
+  fields: {}
+repeater_state_get:
+  name: 查询中继状态
+  description: 读取 repeaterstate 端点，返回中继状态。
+  fields: {}
+repeater_diag_get:
+  name: 查询中继诊断
+  description: 读取 repeaterdiag 端点，返回中继诊断信息。
+  fields: {}
+repeater_dial_set:
+  name: 触发中继拨号
+  description: 触发中继拨号（POST RepeaterDial，action=update）。
+  fields: {}
+netdisk_info_get:
+  name: 查询网络存储信息
+  description: 读取 netdiskinfo 端点，返回网络存储信息。
+  fields: {}
+netdisk_code_get:
+  name: 查询网络存储码
+  description: 读取 netdiskcode 端点，返回网络存储码。
+  fields: {}
+netdisk_code_set:
+  name: 设置网络存储码
+  description: GET 完整对象后覆盖 data 中的字段并回写。
+  fields:
+    data:
+      name: 字段
+      description: 需要覆盖的原始字段对象。
+      required: true
+      example: {}
+      selector:
+        object:
+hilink_status_get:
+  name: 查询 HiLink 状态
+  description: 通过 POST hilink_status 查询 HiLink 组网状态。
+  fields: {}
+slave_setup_set:
+  name: 设置 HiLink 组网
+  description: 设置是否允许被其他设备组网（字段 hilink_allow）。
+  fields:
+    allow:
+      name: 允许
+      description: 是否允许被其他设备组网。
+      required: true
+      example: true
+      selector:
+        boolean:
+multi_host_info_get:
+  name: 查询多主机信息
+  description: 通过 POST MultiHostInfo 查询多主机信息。
+  fields: {}
+system_mode_get:
+  name: 查询系统模式
+  description: 读取 wlanmode 端点，返回无线系统模式。
+  fields: {}
