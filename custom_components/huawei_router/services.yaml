@@ -1101,3 +1101,92 @@ system_mode_get:
   name: 查询系统模式
   description: 读取 wlanmode 端点，返回无线系统模式。
   fields: {}
+wifi_diag_get:
+  name: 查询 WiFi 射频详情
+  description: >
+    读取 diagnose_wlan_basic 端点，返回指定频段的完整射频参数
+    （信道/带宽/信标类型/加密模式/发射功率等）。band=both 时同时返回两个频段。
+  fields:
+    band:
+      name: 频段
+      description: 2.4G / 5G / 两者都查。
+      required: false
+      default: "both"
+      example: "both"
+      selector:
+        select:
+          options:
+            - "2.4G"
+            - "5G"
+            - "both"
+lan_host_get:
+  name: 查询 LAN host 配置
+  description: 读取 lan_host 端点，返回 LAN 域名、网关 MAC/IP、子网掩码。
+  fields: {}
+diagnostics_collect:
+  name: 触发诊断日志收集
+  description: >
+    触发路由器开始收集诊断日志（约 20-120 秒）。异步返回，
+    之后用 diagnostics_status 轮询，完成后用 diagnostics_download 下载。
+  fields:
+    mac_address:
+      name: 设备 MAC
+      description: 可选，默认主路由。
+      required: false
+      example: "11:22:33:AA:BB:CC"
+      selector:
+        text:
+diagnostics_status:
+  name: 查询诊断收集状态
+  description: >
+    返回 {"state": ..., "result_ready": ...}。
+    state=ExecLuaSuccess 且 result_ready=true 时可调用 diagnostics_download。
+  fields: {}
+diagnostics_download:
+  name: 下载诊断日志
+  description: >
+    将收集完成的诊断日志包下载到 HA 可访问的本地路径
+    （如 /config/www/huawei_diag.tar，之后可通过 /local/huawei_diag.tar 访问）。
+  fields:
+    path:
+      name: 保存路径
+      description: 完整文件路径（含文件名）。
+      required: true
+      example: "/config/www/huawei_diag.tar"
+      selector:
+        text:
+wps_pair_start:
+  name: 发起 WPS 配对
+  description: >
+    触发一次 WPS 配对会话。mode=pbc（按钮）、client-pin（客户端 PIN）、
+    ap-pin（路由器 PIN，ap_pin_type=default/random）。
+    注意：部分机型（如 Q6 网线版）未开放该端点，调用会返回明确错误。
+  fields:
+    mode:
+      name: 配对模式
+      description: pbc / client-pin / ap-pin。
+      required: true
+      example: "pbc"
+      selector:
+        select:
+          options:
+            - "pbc"
+            - "client-pin"
+            - "ap-pin"
+    pin:
+      name: PIN 码
+      description: 仅 client-pin 模式需要。
+      required: false
+      example: "12345678"
+      selector:
+        text:
+    ap_pin_type:
+      name: AP PIN 类型
+      description: 仅 ap-pin 模式有效。
+      required: false
+      default: "default"
+      selector:
+        select:
+          options:
+            - "default"
+            - "random"

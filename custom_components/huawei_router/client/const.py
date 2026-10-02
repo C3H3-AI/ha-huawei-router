@@ -74,6 +74,15 @@ URL_LAN: Final = "api/ntwk/lan"
 URL_LAN_ALL: Final = "api/ntwk/lan_all"
 URL_LAN_SERVER: Final = "api/ntwk/lan_server"
 URL_LAN_DEVICE_TYPE: Final = "api/ntwk/lan_devicetype"
+URL_LAN_HOST: Final = "api/ntwk/lan_host"
+
+# WiFi 射频详情（诊断页同款数据；type=1 为 2.4G，type=2 为 5G，真机已验证）
+URL_WLAN_DIAG_BASIC_2G: Final = "api/system/diagnose_wlan_basic?type=1"
+URL_WLAN_DIAG_BASIC_5G: Final = "api/system/diagnose_wlan_basic?type=2"
+
+# 诊断日志收集 / 下载（真机已验证全链路，见 VERIFICATION.md）
+URL_DIAGNOSTICS: Final = "api/system/diagnose_crash"
+URL_DIAGNOSTICS_DOWNLOAD: Final = "api/system/diagnose_crash_resultdownload"
 
 URL_WAN_LEARN_CONFIG: Final = "api/ntwk/wanlearnconfig?type=notshowpass"
 URL_WAN_DIAGNOSE: Final = "api/ntwk/wandiagnose"

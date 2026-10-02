@@ -34,6 +34,7 @@ from .client.classes import (
     FilterMode,
     HuaweiGuestNetworkDuration,
 )
+from .client.huaweiapi import InvalidActionError
 from .client.const import (
     RAW_API_ENDPOINTS,
     URL_ACCESS_AUTH,
@@ -252,6 +253,12 @@ class ServiceName(StrEnum):
     SLAVE_SETUP_SET = "slave_setup_set"
     MULTI_HOST_INFO_GET = "multi_host_info_get"
     SYSTEM_MODE_GET = "system_mode_get"
+    WIFI_DIAG_GET = "wifi_diag_get"
+    LAN_HOST_GET = "lan_host_get"
+    DIAGNOSTICS_COLLECT = "diagnostics_collect"
+    DIAGNOSTICS_STATUS = "diagnostics_status"
+    DIAGNOSTICS_DOWNLOAD = "diagnostics_download"
+    WPS_PAIR_START = "wps_pair_start"
 
 
 
@@ -690,6 +697,36 @@ SERVICES = [
     ),
     ServiceDescription(name=ServiceName.MULTI_HOST_INFO_GET, schema=vol.Schema({})),
     ServiceDescription(name=ServiceName.SYSTEM_MODE_GET, schema=vol.Schema({})),
+    ServiceDescription(
+        name=ServiceName.WIFI_DIAG_GET,
+        schema=vol.Schema(
+            {
+                vol.Optional("band", default="both"): vol.In(["2.4G", "5G", "both"]),
+            }
+        ),
+    ),
+    ServiceDescription(name=ServiceName.LAN_HOST_GET, schema=vol.Schema({})),
+    ServiceDescription(
+        name=ServiceName.DIAGNOSTICS_COLLECT,
+        schema=vol.Schema({vol.Optional("mac_address"): _CV_MAC_ADDR}),
+    ),
+    ServiceDescription(name=ServiceName.DIAGNOSTICS_STATUS, schema=vol.Schema({})),
+    ServiceDescription(
+        name=ServiceName.DIAGNOSTICS_DOWNLOAD,
+        schema=vol.Schema({vol.Required("path"): cv.string}),
+    ),
+    ServiceDescription(
+        name=ServiceName.WPS_PAIR_START,
+        schema=vol.Schema(
+            {
+                vol.Required("mode"): vol.In(["pbc", "client-pin", "ap-pin"]),
+                vol.Optional("pin"): cv.string,
+                vol.Optional("ap_pin_type", default="default"): vol.In(
+                    ["default", "random"]
+                ),
+            }
+        ),
+    ),
 ]
 
 
@@ -2234,6 +2271,109 @@ async def _async_system_mode_get(hass: HomeAssistant, service: ServiceCall):
 
 
 # ---------------------------
+#   WiFi 射频详情 / LAN host / 诊断日志 / WPS 配对（最后一缺口）
+# ---------------------------
+async def _async_wifi_diag_get(hass: HomeAssistant, service: ServiceCall):
+    """Return full radio parameters for one or both bands (真机已验证)."""
+    band = service.data.get("band", "both")
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    result: dict = {}
+    try:
+        if band in ("2.4G", "both"):
+            result["2.4G"] = await coordinator.primary_router_api.get_wlan_diag_basic("2.4G")
+        if band in ("5G", "both"):
+            result["5G"] = await coordinator.primary_router_api.get_wlan_diag_basic("5G")
+    except Exception as ex:
+        raise HomeAssistantError(f"获取 WiFi 射频详情失败: {ex}")
+    return result
+
+
+async def _async_lan_host_get(hass: HomeAssistant, service: ServiceCall):
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        return await coordinator.primary_router_api.get_lan_host()
+    except Exception as ex:
+        raise HomeAssistantError(f"获取 LAN host 配置失败: {ex}")
+
+
+async def _async_diagnostics_collect(hass: HomeAssistant, service: ServiceCall):
+    """Start diagnostics collection (async; poll diagnostics_status)."""
+    mac = service.data.get("mac_address")
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        await coordinator.primary_router_api.diagnostics_collect_start(mac)
+        _LOGGER.info("Diagnostics collection started (mac=%s)", mac or "primary")
+    except Exception as ex:
+        raise HomeAssistantError(f"触发诊断收集失败: {ex}")
+
+
+async def _async_diagnostics_status(hass: HomeAssistant, service: ServiceCall):
+    """Return current collection state; result_ready=True when downloadable."""
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        state = await coordinator.primary_router_api.get_diagnostics_state()
+    except Exception as ex:
+        raise HomeAssistantError(f"查询诊断状态失败: {ex}")
+    if not isinstance(state, dict):
+        return {"raw": state}
+    return {
+        "state": state.get("DiagnosticsState"),
+        "result_ready": state.get("ResultState") is True
+        or state.get("ResultState") == 1,
+    }
+
+
+async def _async_diagnostics_download(hass: HomeAssistant, service: ServiceCall):
+    """Download the diagnostics package into the HA config directory."""
+    path = service.data["path"]
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        return await coordinator.primary_router_api.diagnostics_download(path)
+    except HomeAssistantError:
+        raise
+    except Exception as ex:
+        raise HomeAssistantError(f"下载诊断日志失败: {ex}")
+
+
+async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
+    """Trigger a WPS pairing session (pbc / client-pin / ap-pin).
+
+    ⚠️ 底层端点在 Q6 网线版上 404（前端硬编码 isSupportWps=false 的同源问题）。
+    端点缺失时给出明确错误而不是裸 traceback。
+    """
+    mode = service.data["mode"]
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        await coordinator.primary_router_api.wps_pair_start(
+            mode,
+            pin=service.data.get("pin"),
+            ap_pin_type=service.data.get("ap_pin_type", "default"),
+        )
+        _LOGGER.info("WPS pairing started: mode=%s", mode)
+    except InvalidActionError:
+        raise
+    except Exception as ex:
+        msg = str(ex)
+        if "404" in msg:
+            raise HomeAssistantError(
+                "本机型未开放 WPS 管理端点（HTTP 404）——该功能在此固件上不可用"
+            )
+        raise HomeAssistantError(f"触发 WPS 配对失败: {ex}")
+
+
+# ---------------------------
 #   _change_instances_count
 # ---------------------------
 def _change_instances_count(hass: HomeAssistant, delta: int) -> int:
@@ -2576,6 +2716,24 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         elif service_name == ServiceName.SYSTEM_MODE_GET:
             return await _async_system_mode_get(hass, service)
+
+        elif service_name == ServiceName.WIFI_DIAG_GET:
+            return await _async_wifi_diag_get(hass, service)
+
+        elif service_name == ServiceName.LAN_HOST_GET:
+            return await _async_lan_host_get(hass, service)
+
+        elif service_name == ServiceName.DIAGNOSTICS_COLLECT:
+            await _async_diagnostics_collect(hass, service)
+
+        elif service_name == ServiceName.DIAGNOSTICS_STATUS:
+            return await _async_diagnostics_status(hass, service)
+
+        elif service_name == ServiceName.DIAGNOSTICS_DOWNLOAD:
+            return await _async_diagnostics_download(hass, service)
+
+        elif service_name == ServiceName.WPS_PAIR_START:
+            await _async_wps_pair_start(hass, service)
 
         else:
 
