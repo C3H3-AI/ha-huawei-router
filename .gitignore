@@ -156,3 +156,12 @@ dump_*.py
 # Date-stamped workspace notes
 *_202605*.md
 *_202606*.md
+
+# ── 例外：docs/skills/ 需要提交（配套 skill 版本化管理）────────────────────
+# 必须放在文件末尾：.gitignore 后面的规则会覆盖前面的否定规则。
+# 用逐层精确放行，避免 /** 连带放行 __pycache__ 等无关文件。
+!/docs/
+!/docs/skills/
+!/docs/skills/**/
+!/docs/skills/**/*.md
+!/docs/skills/**/*.py
