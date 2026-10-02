@@ -257,6 +257,7 @@ class ServiceName(StrEnum):
     LAN_HOST_GET = "lan_host_get"
     DIAGNOSTICS_COLLECT = "diagnostics_collect"
     DIAGNOSTICS_STATUS = "diagnostics_status"
+    DIAGNOSTICS_DEVLIST = "diagnostics_devlist"
     DIAGNOSTICS_DOWNLOAD = "diagnostics_download"
     WPS_PAIR_START = "wps_pair_start"
     CONFIG_EXPORT = "config_export"
@@ -713,6 +714,9 @@ SERVICES = [
         schema=vol.Schema({vol.Optional("mac_address"): _CV_MAC_ADDR}),
     ),
     ServiceDescription(name=ServiceName.DIAGNOSTICS_STATUS, schema=vol.Schema({})),
+    ServiceDescription(
+        name=ServiceName.DIAGNOSTICS_DEVLIST, schema=vol.Schema({})
+    ),
     ServiceDescription(
         name=ServiceName.DIAGNOSTICS_DOWNLOAD,
         schema=vol.Schema({vol.Required("path"): cv.string}),
@@ -2346,6 +2350,32 @@ async def _async_diagnostics_status(hass: HomeAssistant, service: ServiceCall):
     }
 
 
+async def _async_diagnostics_devlist(hass: HomeAssistant, service: ServiceCall):
+    """List devices that can be diagnosed (main router + satellite routers).
+
+    返回的 MAC 可直接用于 diagnostics_collect 的 mac_address 参数，
+    从而采集指定子路由（而非主路由）的诊断日志。真机验证：6 条。
+    """
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        devices = await coordinator.primary_router_api.get_diagnostics_devlist()
+    except Exception as ex:
+        raise HomeAssistantError(f"获取可诊断设备列表失败: {ex}")
+    return {
+        "devices": [
+            {
+                "name": d.get("DeviceName"),
+                "mac_address": d.get("MACAddress"),
+                "is_main": d.get("IsMainDevice") is True,
+                "url": d.get("URL"),
+            }
+            for d in devices
+        ]
+    }
+
+
 async def _async_diagnostics_download(hass: HomeAssistant, service: ServiceCall):
     """Download the diagnostics package into the HA config directory."""
     path = service.data["path"]
@@ -2772,6 +2802,9 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         elif service_name == ServiceName.DIAGNOSTICS_STATUS:
             return await _async_diagnostics_status(hass, service)
+
+        elif service_name == ServiceName.DIAGNOSTICS_DEVLIST:
+            return await _async_diagnostics_devlist(hass, service)
 
         elif service_name == ServiceName.DIAGNOSTICS_DOWNLOAD:
             return await _async_diagnostics_download(hass, service)

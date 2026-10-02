@@ -82,6 +82,7 @@ URL_WLAN_DIAG_BASIC_5G: Final = "api/system/diagnose_wlan_basic?type=2"
 
 # 诊断日志收集 / 下载（真机已验证全链路，见 VERIFICATION.md）
 URL_DIAGNOSTICS: Final = "api/system/diagnose_crash"
+URL_DIAGNOSTICS_DEVLIST: Final = "api/system/diagnose_crash_devlist"
 URL_DIAGNOSTICS_DOWNLOAD: Final = "api/system/diagnose_crash_resultdownload"
 
 URL_WAN_LEARN_CONFIG: Final = "api/ntwk/wanlearnconfig?type=notshowpass"

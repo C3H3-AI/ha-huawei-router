@@ -1142,6 +1142,14 @@ diagnostics_status:
     返回 {"state": ..., "result_ready": ...}。
     state=ExecLuaSuccess 且 result_ready=true 时可调用 diagnostics_download。
   fields: {}
+diagnostics_devlist:
+  name: 查询可诊断设备列表
+  description: >
+    列出可收集诊断日志的设备（主路由 + 各子路由），返回
+    name / mac_address / is_main / url。
+    把某个子路由的 mac_address 传给 diagnostics_collect，
+    即可采集该子路由（而非主路由）的诊断日志。
+  fields: {}
 diagnostics_download:
   name: 下载诊断日志
   description: >
