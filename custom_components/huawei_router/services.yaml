@@ -1190,3 +1190,37 @@ wps_pair_start:
           options:
             - "default"
             - "random"
+config_export:
+  name: 导出路由器配置
+  description: >
+    下载路由器配置备份（.conf 加密包，与 Web UI「导出配置」完全一致）到本地路径。
+    建议在每次改动路由器设置前先导出备份。
+  fields:
+    path:
+      name: 保存路径
+      description: 完整文件路径（含 .conf 文件名）。
+      required: true
+      example: "/config/www/q6_config_backup.conf"
+      selector:
+        text:
+config_import:
+  name: 导入路由器配置
+  description: >
+    ⚠️ 破坏性操作：上传之前导出的 .conf 配置备份，路由器将覆盖全部当前设置
+    并自动重启（约 60 秒，期间整屋断网）。仅接受本集成 config_export
+    或 Web UI 导出的 .conf 文件。wait_restart=true 时等待路由器重启完成后返回。
+  fields:
+    path:
+      name: 配置文件路径
+      description: 之前导出的 .conf 文件完整路径。
+      required: true
+      example: "/config/www/q6_config_backup.conf"
+      selector:
+        text:
+    wait_restart:
+      name: 等待重启完成
+      description: 为 true 时阻塞直到路由器恢复可达（最长约 5 分钟）。
+      required: false
+      default: false
+      selector:
+        boolean:

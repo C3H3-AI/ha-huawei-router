@@ -259,6 +259,8 @@ class ServiceName(StrEnum):
     DIAGNOSTICS_STATUS = "diagnostics_status"
     DIAGNOSTICS_DOWNLOAD = "diagnostics_download"
     WPS_PAIR_START = "wps_pair_start"
+    CONFIG_EXPORT = "config_export"
+    CONFIG_IMPORT = "config_import"
 
 
 
@@ -724,6 +726,19 @@ SERVICES = [
                 vol.Optional("ap_pin_type", default="default"): vol.In(
                     ["default", "random"]
                 ),
+            }
+        ),
+    ),
+    ServiceDescription(
+        name=ServiceName.CONFIG_EXPORT,
+        schema=vol.Schema({vol.Required("path"): cv.string}),
+    ),
+    ServiceDescription(
+        name=ServiceName.CONFIG_IMPORT,
+        schema=vol.Schema(
+            {
+                vol.Required("path"): cv.string,
+                vol.Optional("wait_restart", default=False): vol.Coerce(bool),
             }
         ),
     ),
@@ -2373,6 +2388,35 @@ async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
         raise HomeAssistantError(f"触发 WPS 配对失败: {ex}")
 
 
+async def _async_config_export(hass: HomeAssistant, service: ServiceCall):
+    """Export the router configuration backup to a local file (真机验证 ✅)."""
+    path = service.data["path"]
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        return await coordinator.primary_router_api.config_export(path)
+    except Exception as ex:
+        raise HomeAssistantError(f"导出配置失败: {ex}")
+
+
+async def _async_config_import(hass: HomeAssistant, service: ServiceCall):
+    """⚠️ 破坏性：上传配置备份，路由器覆盖全部设置并重启。"""
+    path = service.data["path"]
+    wait_restart = service.data.get("wait_restart", False)
+    coordinator = _find_any_coordinator(hass)
+    if not coordinator:
+        raise HomeAssistantError("Can not find any Huawei router coordinator")
+    try:
+        return await coordinator.primary_router_api.config_import(
+            path, wait_restart=wait_restart
+        )
+    except HomeAssistantError:
+        raise
+    except Exception as ex:
+        raise HomeAssistantError(f"导入配置失败: {ex}")
+
+
 # ---------------------------
 #   _change_instances_count
 # ---------------------------
@@ -2734,6 +2778,12 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         elif service_name == ServiceName.WPS_PAIR_START:
             await _async_wps_pair_start(hass, service)
+
+        elif service_name == ServiceName.CONFIG_EXPORT:
+            return await _async_config_export(hass, service)
+
+        elif service_name == ServiceName.CONFIG_IMPORT:
+            return await _async_config_import(hass, service)
 
         else:
 
