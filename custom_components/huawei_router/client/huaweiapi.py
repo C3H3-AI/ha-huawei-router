@@ -168,6 +168,8 @@ from .const import (
 
     URL_DIAGNOSTICS,
 
+    URL_DIAGNOSTICS_DEVLIST,
+
     URL_DIAGNOSTICS_DOWNLOAD,
 
     URL_WAN_LEARN_CONFIG,
@@ -2492,6 +2494,20 @@ class HuaweiApi:
         "ErrorExecLuaFailed" / "ErrorNoDiagnoseResult") and ResultState.
         """
         return await self._core_api.get(URL_DIAGNOSTICS)
+
+    async def get_diagnostics_devlist(self) -> list[dict[str, Any]]:
+        """Return the devices that can be diagnosed (main router + satellites).
+
+        Verified against a real Q6 网线版: returns 6 entries, each with
+        ``DeviceName`` / ``MACAddress`` / ``URL`` / ``IsMainDevice`` /
+        ``IsSupportNtwkCrash``. Use the MAC of the target device when calling
+        ``diagnostics_collect_start`` — this is how you collect a satellite
+        router's log rather than the main router's.
+        """
+        data = await self._core_api.get(URL_DIAGNOSTICS_DEVLIST)
+        if isinstance(data, list):
+            return [x for x in data if isinstance(x, dict)]
+        return []
 
     async def diagnostics_collect_start(self, mac_address: str | None = None) -> dict[str, Any]:
         """Start a diagnostics log collection.
