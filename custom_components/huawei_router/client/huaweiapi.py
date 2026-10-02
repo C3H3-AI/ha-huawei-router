@@ -2549,6 +2549,119 @@ class HuaweiApi:
         return {"path": file_path, "size": total}
 
     # ---------------------------
+    #   配置导出 / 导入（reset 页，真机已验证导出）
+    # ---------------------------
+
+    async def config_export(self, file_path: str) -> dict[str, Any]:
+        """Download the router configuration backup to a local file.
+
+        Verified against a real Q6 网线版: GET ``/api/system/downloadcfg``
+        returns ``application/octet-stream`` with
+        ``Content-Disposition: attachment; filename=downloadconfigfile<ts>.conf``.
+        The payload is an encrypted binary blob (~86 KB on this unit) — it is
+        the exact file the Web UI "导出配置" saves and the only format
+        ``config_import`` accepts. Uses the live authenticated session.
+        """
+        import os
+
+        if not file_path or os.path.isdir(file_path):
+            raise InvalidActionError(
+                f"config_export 需要一个完整文件路径（含文件名），收到: {file_path}"
+            )
+        parent = os.path.dirname(os.path.abspath(file_path))
+        if parent and not os.path.isdir(parent):
+            raise InvalidActionError(f"目标目录不存在: {parent}")
+
+        response = await self._core_api._get_raw("api/system/downloadcfg")
+        if response.status != 200:
+            raise ApiCallError(
+                f"导出配置失败，HTTP {response.status}",
+                APICALL_ERRCODE_REQUEST,
+                APICALL_ERRCAT_REQUEST,
+            )
+        disposition = response.headers.get("Content-Disposition", "")
+        data = await response.read()
+        with open(file_path, "wb") as fh:
+            fh.write(data)
+        return {
+            "path": file_path,
+            "size": len(data),
+            "server_filename": (
+                disposition.split("filename=")[-1].strip('"') if disposition else None
+            ),
+        }
+
+    async def config_import(
+        self, file_path: str, wait_restart: bool = False
+    ) -> dict[str, Any]:
+        """Upload a previously exported ``.conf`` backup to the router.
+
+        ⚠️⚠️ 破坏性操作：路由器会用该配置覆盖当前全部设置并自动重启（约 60 秒），
+        期间整屋断网。前端强制 .conf 扩展名。
+
+        Reverse-engineered from Web UI reset page (chunk 34) + common Upload
+        component (chunk 0):
+          POST /api/device/uploadconfigfile  multipart/form-data
+            csrf_token        = "csrf:" + csrf_param + csrf_token
+            textfield         = 文件名
+            configurefilename = 文件二进制
+        Optional polling: GET device/uploadconfigfileresult → {uploadFail: 0|1}.
+        """
+        import os
+
+        if not file_path or not os.path.isfile(file_path):
+            raise InvalidActionError(f"配置文件不存在: {file_path}")
+        if not file_path.lower().endswith(".conf"):
+            raise InvalidActionError("配置文件必须是 .conf（与 Web UI 导出格式一致）")
+
+        # multipart 组装：csrf_token 字段是 "csrf:" + param + token 拼接
+        csrf = self._core_api._active_csrf or {}
+        csrf_value = (
+            "csrf:" + str(csrf.get("csrf_param", "")) + str(csrf.get("csrf_token", ""))
+        )
+        form = aiohttp.FormData()
+        form.add_field("csrf_token", csrf_value)
+        form.add_field("textfield", os.path.basename(file_path))
+        form.add_field(
+            "configurefilename",
+            open(file_path, "rb"),
+            filename=os.path.basename(file_path),
+            content_type="application/octet-stream",
+        )
+
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "配置导入已发起（%s）——路由器将覆盖全部设置并重启，约 60 秒",
+            file_path,
+        )
+        # multipart POST 需绕过 core 的 JSON dto 封装，直接用已认证 session
+        await self._core_api._ensure_initialized()
+        response = await self._core_api._session.post(
+            url=self._core_api._get_url("api/device/uploadconfigfile"),
+            data=form,
+            verify_ssl=self._core_api._verify_ssl,
+            timeout=600,
+        )
+        result = await _get_response_json(response)
+        out: dict[str, Any] = {"errcode": result.get("errcode") if result else None}
+        if wait_restart:
+            # 前端提交后 60 秒跳转首页；这里轮询设备可达
+            await asyncio.sleep(10)
+            for _ in range(60):
+                await asyncio.sleep(5)
+                try:
+                    r = await self._core_api._get_raw("api/system/deviceinfo")
+                    if r.status == 200:
+                        out["router_back"] = True
+                        break
+                except Exception:  # noqa: BLE001 - 重启期间不可达属预期
+                    continue
+            else:
+                out["router_back"] = False
+        return out
+
+    # ---------------------------
     #   家庭安全（防暴力破解 + 防蹭网）
     # ---------------------------
 
