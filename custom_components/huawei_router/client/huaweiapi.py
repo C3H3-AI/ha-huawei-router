@@ -158,7 +158,17 @@ from .const import (
 
     URL_LAN_ALL,
 
+    URL_LAN_HOST,
+
     URL_LAN_SERVER,
+
+    URL_WLAN_DIAG_BASIC_2G,
+
+    URL_WLAN_DIAG_BASIC_5G,
+
+    URL_DIAGNOSTICS,
+
+    URL_DIAGNOSTICS_DOWNLOAD,
 
     URL_WAN_LEARN_CONFIG,
 
@@ -238,7 +248,13 @@ from .const import (
 
 )
 
-from .coreapi import HuaweiCoreApi, _get_response_json
+from .coreapi import (
+    APICALL_ERRCAT_REQUEST,
+    APICALL_ERRCODE_REQUEST,
+    ApiCallError,
+    HuaweiCoreApi,
+    _get_response_json,
+)
 
 from .crypto import rsa_encode
 
@@ -2402,8 +2418,135 @@ class HuaweiApi:
         await self._core_api.post(URL_WLAN_RADIO, target)
 
     async def set_wps_enabled(self, enabled: bool) -> None:
-        """开关 WPS（字段名 WpsEnable 已由逆向确认）。"""
+        """开关 WPS（字段名 WpsEnable 已由逆向确认）。
+
+        ⚠️ 本端点在 Q6 网线版（WS8000-16, 6.1.0.20）真机 404 —— 该机型
+        未开放 WPS 管理端点，调用会抛 ApiCallError。调用方应先探测。
+        """
         await self._core_api.post(URL_WPS_SWITCH, {"WpsEnable": enabled})
+
+    async def wps_pair_start(
+        self,
+        mode: str,
+        pin: str | None = None,
+        ap_pin_type: str = "default",
+    ) -> None:
+        """Trigger a WPS pairing session (frontend chunk 54, three modes).
+
+        Verified payload shapes from Web UI wps page:
+          - PBC:         {"WpsMode": "pbc"}
+          - Client PIN:  {"WpsMode": "client-pin", "ClientPinCode": "<pin>"}
+          - AP PIN:      {"WpsMode": "ap-pin", "ApPinType": "default"|"random"}
+
+        ⚠️ Underlying endpoint is 404 on Q6 网线版 — callers must guard.
+        """
+        if mode == "pbc":
+            payload: dict[str, Any] = {"WpsMode": "pbc"}
+        elif mode == "client-pin":
+            if not pin:
+                raise InvalidActionError("client-pin mode requires a PIN")
+            payload = {"WpsMode": "client-pin", "ClientPinCode": pin}
+        elif mode == "ap-pin":
+            payload = {
+                "WpsMode": "ap-pin",
+                "ApPinType": ap_pin_type if ap_pin_type in ("default", "random") else "default",
+            }
+        else:
+            raise InvalidActionError(
+                f"Unknown WPS mode: {mode} (expected pbc / client-pin / ap-pin)"
+            )
+        await self._core_api.post(URL_WLAN_WPS, payload)
+
+    # ---------------------------
+    #   WiFi 射频详情（diagnose_wlan_basic，真机已验证）
+    # ---------------------------
+
+    async def get_wlan_diag_basic(self, band: str) -> dict[str, Any]:
+        """Return full radio parameters for one band ("2.4G" or "5G").
+
+        Verified payload (Q6 网线版): Bandwidth / Channel / SSID / BSSID /
+        RegulatoryDomain / MaxBitRate / BeaconType / WPAEncryptionModes /
+        IEEE11iEncryptionModes / X_WlanStandard / TransmitPower /
+        AutoChannelEnable / Enable ...
+        """
+        if band == "2.4G":
+            url: Final = URL_WLAN_DIAG_BASIC_2G
+        elif band == "5G":
+            url = URL_WLAN_DIAG_BASIC_5G
+        else:
+            raise InvalidActionError(f"Unknown band: {band} (expected 2.4G / 5G)")
+        return await self._core_api.get(url)
+
+    async def get_lan_host(self) -> dict[str, Any]:
+        """Return LAN host configuration (domain / gateway MAC / IP / mask)."""
+        return await self._core_api.get(URL_LAN_HOST)
+
+    # ---------------------------
+    #   诊断日志（diagnose_crash，真机已验证全链路）
+    # ---------------------------
+
+    async def get_diagnostics_state(self) -> dict[str, Any]:
+        """Return current diagnostics collection state.
+
+        Verified fields: DiagnosticsState ("Requested" → "ExecLuaSuccess" /
+        "ErrorExecLuaFailed" / "ErrorNoDiagnoseResult") and ResultState.
+        """
+        return await self._core_api.get(URL_DIAGNOSTICS)
+
+    async def diagnostics_collect_start(self, mac_address: str | None = None) -> dict[str, Any]:
+        """Start a diagnostics log collection.
+
+        Reverse-engineered from Web UI diagnose page (chunk 24):
+          POST diagnose_crash {"CrashAction":"InfoCollect","Mac":..,"IsMainDev":..}
+          extra_data action=update. Collection takes ~20-120s; poll
+          get_diagnostics_state() until DiagnosticsState == ExecLuaSuccess.
+        """
+        if mac_address is None:
+            data = await self._core_api.get(URL_DEVICE_INFO)
+            mac_address = data.get("MACAddress") or data.get("SerialNumber")
+        payload = {
+            "CrashAction": "InfoCollect",
+            "Mac": mac_address,
+            "IsMainDev": True,
+        }
+        return await self._core_api.post(
+            URL_DIAGNOSTICS, payload, extra_data={"action": "update"}
+        )
+
+    async def diagnostics_download(self, file_path: str) -> dict[str, Any]:
+        """Download the collected diagnostics package to a local file.
+
+        Verified against a real Q6 网线版: the endpoint returns
+        ``application/octet-stream`` (a log archive whose first member is
+        ``var/syslog``). Uses the live authenticated session (cookies) via
+        ``_get_raw`` — no separate login, so it cannot trip the router's
+        2-session rate limit.
+
+        Returns {"path": ..., "size": ...}.
+        """
+        import os
+
+        if not file_path or os.path.isdir(file_path):
+            raise InvalidActionError(
+                f"diagnostics_download 需要一个完整文件路径（含文件名），收到: {file_path}"
+            )
+        parent = os.path.dirname(os.path.abspath(file_path))
+        if parent and not os.path.isdir(parent):
+            raise InvalidActionError(f"目标目录不存在: {parent}")
+
+        response = await self._core_api._get_raw(URL_DIAGNOSTICS_DOWNLOAD)
+        if response.status != 200:
+            raise ApiCallError(
+                f"下载诊断日志失败，HTTP {response.status}（是否尚未完成收集？）",
+                APICALL_ERRCODE_REQUEST,
+                APICALL_ERRCAT_REQUEST,
+            )
+        total = 0
+        with open(file_path, "wb") as fh:
+            while chunk := await response.content.read(65536):
+                fh.write(chunk)
+                total += len(chunk)
+        return {"path": file_path, "size": total}
 
     # ---------------------------
     #   家庭安全（防暴力破解 + 防蹭网）
