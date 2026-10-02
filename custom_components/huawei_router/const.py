@@ -55,7 +55,15 @@ DEVICE_SENSOR_GROUP_OPTIONS: Final = {
     "traffic": "流量统计(发送/接收/连接速率)",
     "info": "设备信息(厂商/类型/在线时长/家长控制)",
 }
-DEFAULT_DEVICE_SENSOR_GROUPS: Final = ["core", "signal", "speed", "traffic", "info"]
+
+# 默认只启用「基础」组。
+#
+# 理由（2026-09-30 实测，97 台设备 / 1665 实体）：
+#   - 实时速率与静态设备信息每秒级刷新，写入 states 表却几乎无回溯价值；
+#   - 设备级实体随设备数线性增长，是实体膨胀的主体；
+#   - 关闭后仍可在集成「配置」中按需逐组开启。
+# 需要更多信息时，用户在集成配置里勾选相应分组即可。
+DEFAULT_DEVICE_SENSOR_GROUPS: Final = ["core"]
 MIN_SCAN_INTERVAL: Final = 10
 
 

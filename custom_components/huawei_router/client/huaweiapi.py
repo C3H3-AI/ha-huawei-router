@@ -34,7 +34,13 @@ from .classes import (
 
     HuaweiConnectionInfo,
 
+    HuaweiChannelInfo,
+
+    HuaweiDeviceCount,
+
     HuaweiDeviceNode,
+
+    HuaweiEthPort,
 
     HuaweiFilterInfo,
 
@@ -43,6 +49,10 @@ from .classes import (
     HuaweiGuestNetworkDuration,
 
     HuaweiGuestNetworkItem,
+
+    HuaweiNtpStatus,
+
+    HuaweiProcessStatus,
 
     HuaweiDhcpStaticLeaseItem,
 
@@ -189,6 +199,10 @@ from .const import (
     URL_ONLINE_STATE,
 
     URL_ETH_NEGOTIATION,
+
+    URL_CHANNEL_INFO,
+
+    URL_DEVICE_COUNT,
 
     URL_AUTO_UPGRADE,
 
@@ -457,6 +471,91 @@ class HuaweiApi:
             upload_rate=rate_data.get("UpBandwidth", 0),
             download_rate=rate_data.get("DownBandwidth", 0),
         )
+
+    # ---------------------------
+    #   健康监控（均已真机验证）
+    # ---------------------------
+
+    async def get_process_status(self) -> HuaweiProcessStatus | None:
+        """Return aggregate CPU / memory usage.
+
+        Verified on Q6 网线版: the endpoint returns a list; the ``Total``
+        entry carries the aggregate percentages.
+        """
+        data = await self._core_api.get(URL_PROCESS_STATUS)
+        if not isinstance(data, list):
+            return None
+        for item in data:
+            if isinstance(item, dict) and item.get("Name") == "Total":
+                return HuaweiProcessStatus(
+                    cpu_usage=int(item.get("CpuUsage", 0) or 0),
+                    mem_usage=int(item.get("MemUsage", 0) or 0),
+                )
+        return None
+
+    async def get_device_count(self) -> HuaweiDeviceCount | None:
+        """Return connected-device counters."""
+        data = await self._core_api.get(URL_DEVICE_COUNT)
+        if not isinstance(data, dict):
+            return None
+        return HuaweiDeviceCount(
+            hilink_devices=int(data.get("HiLinkDevNum", 0) or 0),
+            active_devices=int(data.get("ActiveDeviceNumbers", 0) or 0),
+            lan_active=int(data.get("LanActiveNumber", 0) or 0),
+            user_number=int(data.get("UserNumber", 0) or 0),
+        )
+
+    async def get_ntp_status(self) -> HuaweiNtpStatus | None:
+        """Return NTP synchronisation state."""
+        data = await self._core_api.get(URL_NTP)
+        if not isinstance(data, dict):
+            return None
+        return HuaweiNtpStatus(
+            synchronized=bool(data.get("SntpIsSynchronizedStatus", False)),
+            status=data.get("Status"),
+            server_primary=data.get("NTPServer1"),
+            server_secondary=data.get("NTPServer2"),
+        )
+
+    async def get_channel_info(self) -> HuaweiChannelInfo:
+        """Return the current channel of each WiFi band.
+
+        Verified payload: ``WifiStatus[].ChannelInfo[]``, where every entry
+        carries an explicit ``FrequencyBand`` ("2.4GHz" / "5GHz") and a
+        ``Channel``. The band label is authoritative — do not infer the band
+        from the channel number. One entry is reported per mesh node, so the
+        first node that reports a band wins (the whole mesh is single-channel).
+        """
+        data = await self._core_api.get(URL_CHANNEL_INFO)
+        result = HuaweiChannelInfo()
+        if not isinstance(data, dict):
+            return result
+        for node in data.get("WifiStatus", []) or []:
+            for ch in (node or {}).get("ChannelInfo", []) or []:
+                channel = ch.get("Channel")
+                band = str(ch.get("FrequencyBand", ""))
+                if not channel:
+                    continue
+                if band == "2.4GHz" and result.channel_2g is None:
+                    result.channel_2g = int(channel)
+                elif band == "5GHz" and result.channel_5g is None:
+                    result.channel_5g = int(channel)
+        return result
+
+    async def get_eth_ports(self) -> Iterable[HuaweiEthPort]:
+        """Return every physical Ethernet port with its negotiated speed."""
+        data = await self._core_api.get(URL_ETH_NEGOTIATION)
+        if not isinstance(data, dict):
+            return []
+        return [
+            HuaweiEthPort(
+                port_name=str(item.get("PortName", "?")),
+                speed=int(item.get("Speed", 0) or 0),
+                status=int(item.get("Status", 0) or 0),
+            )
+            for item in data.get("ethintflist", []) or []
+            if isinstance(item, dict)
+        ]
 
 
 

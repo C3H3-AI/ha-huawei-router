@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-from typing import Callable, Final
+from typing import Any, Callable, Final
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -11,6 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.const import PERCENTAGE, UnitOfDataRate
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
@@ -107,6 +108,28 @@ _FUNCTION_UID_PARENT_CONTROL: Final = "sensor_parent_control"
 _FUNCTION_DISPLAYED_NAME_CONNECTED_VIA: Final = "连接至"
 _FUNCTION_UID_CONNECTED_VIA: Final = "sensor_connected_via"
 
+# 健康监控（端点均经真机验证，见 VERIFICATION.md）
+_FUNCTION_DISPLAYED_NAME_CPU_USAGE: Final = "CPU使用率"
+_FUNCTION_UID_CPU_USAGE: Final = "sensor_cpu_usage"
+
+_FUNCTION_DISPLAYED_NAME_MEM_USAGE: Final = "内存使用率"
+_FUNCTION_UID_MEM_USAGE: Final = "sensor_mem_usage"
+
+_FUNCTION_DISPLAYED_NAME_ACTIVE_DEVICES: Final = "在线设备数"
+_FUNCTION_UID_ACTIVE_DEVICES: Final = "sensor_active_devices"
+
+_FUNCTION_DISPLAYED_NAME_MESH_NODES: Final = "Mesh节点数"
+_FUNCTION_UID_MESH_NODES: Final = "sensor_mesh_nodes"
+
+_FUNCTION_DISPLAYED_NAME_CHANNEL_2G: Final = "2.4G信道"
+_FUNCTION_UID_CHANNEL_2G: Final = "sensor_channel_2g"
+
+_FUNCTION_DISPLAYED_NAME_CHANNEL_5G: Final = "5G信道"
+_FUNCTION_UID_CHANNEL_5G: Final = "sensor_channel_5g"
+
+_FUNCTION_DISPLAYED_NAME_NTP_STATUS: Final = "NTP同步状态"
+_FUNCTION_UID_NTP_STATUS: Final = "sensor_ntp_status"
+
 _ENTITY_DOMAIN: Final = "sensor"
 
 
@@ -159,6 +182,23 @@ class HuaweiDiagnosticsSensorEntityDescription(HuaweiSensorEntityDescription):
     """A class that describes diagnostics sensor entity."""
 
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
+
+
+# ---------------------------
+#   HuaweiHealthSensorEntityDescription
+# ---------------------------
+@dataclass
+class HuaweiHealthSensorEntityDescription(HuaweiSensorEntityDescription):
+    """Router health metrics (CPU / memory / channels / ports).
+
+    Values come from endpoints verified against a real Q6 网线版
+    (WS8000-16, 6.1.0.20) — see VERIFICATION.md.
+    """
+
+    native_unit_of_measurement: str | None = None
+    state_class: SensorStateClass | str | None = SensorStateClass.MEASUREMENT
+    entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
+    suggested_display_precision: int | None = None
 
 
 # ---------------------------
@@ -312,6 +352,142 @@ async def async_setup_entry(
                 ),
             )
         )
+
+        # ---------------- 健康监控（端点均经真机验证） ----------------
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="cpu_usage",
+                    icon="mdi:cpu-64-bit",
+                    name=_FUNCTION_DISPLAYED_NAME_CPU_USAGE,
+                    translation_key="cpu_usage",
+                    function_uid=_FUNCTION_UID_CPU_USAGE,
+                    function_name=_FUNCTION_DISPLAYED_NAME_CPU_USAGE,
+                    device_mac=None,
+                    device_name=None,
+                    native_unit_of_measurement=PERCENTAGE,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.cpu_usage if (s := c.get_process_status()) else None),
+            )
+        )
+
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="mem_usage",
+                    icon="mdi:memory",
+                    name=_FUNCTION_DISPLAYED_NAME_MEM_USAGE,
+                    translation_key="mem_usage",
+                    function_uid=_FUNCTION_UID_MEM_USAGE,
+                    function_name=_FUNCTION_DISPLAYED_NAME_MEM_USAGE,
+                    device_mac=None,
+                    device_name=None,
+                    native_unit_of_measurement=PERCENTAGE,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.mem_usage if (s := c.get_process_status()) else None),
+            )
+        )
+
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="active_devices",
+                    icon="mdi:devices",
+                    name=_FUNCTION_DISPLAYED_NAME_ACTIVE_DEVICES,
+                    translation_key="active_devices",
+                    function_uid=_FUNCTION_UID_ACTIVE_DEVICES,
+                    function_name=_FUNCTION_DISPLAYED_NAME_ACTIVE_DEVICES,
+                    device_mac=None,
+                    device_name=None,
+                    native_unit_of_measurement=UNITS_CLIENTS,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.active_devices if (s := c.get_device_count()) else None),
+            )
+        )
+
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="mesh_nodes",
+                    icon="mdi:access-point-network",
+                    name=_FUNCTION_DISPLAYED_NAME_MESH_NODES,
+                    translation_key="mesh_nodes",
+                    function_uid=_FUNCTION_UID_MESH_NODES,
+                    function_name=_FUNCTION_DISPLAYED_NAME_MESH_NODES,
+                    device_mac=None,
+                    device_name=None,
+                    native_unit_of_measurement=UNITS_CLIENTS,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.hilink_devices if (s := c.get_device_count()) else None),
+            )
+        )
+
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="channel_2g",
+                    icon="mdi:radio-tower",
+                    name=_FUNCTION_DISPLAYED_NAME_CHANNEL_2G,
+                    translation_key="channel_2g",
+                    function_uid=_FUNCTION_UID_CHANNEL_2G,
+                    function_name=_FUNCTION_DISPLAYED_NAME_CHANNEL_2G,
+                    device_mac=None,
+                    device_name=None,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.channel_2g if (s := c.get_channel_info()) else None),
+            )
+        )
+
+        sensors.append(
+            HuaweiHealthSensor(
+                coordinator,
+                HuaweiHealthSensorEntityDescription(
+                    key="channel_5g",
+                    icon="mdi:radio-tower",
+                    name=_FUNCTION_DISPLAYED_NAME_CHANNEL_5G,
+                    translation_key="channel_5g",
+                    function_uid=_FUNCTION_UID_CHANNEL_5G,
+                    function_name=_FUNCTION_DISPLAYED_NAME_CHANNEL_5G,
+                    device_mac=None,
+                    device_name=None,
+                    suggested_display_precision=0,
+                ),
+                lambda c: (s.channel_5g if (s := c.get_channel_info()) else None),
+            )
+        )
+
+        # 网口协商速率：端口名固定，避免实体随插拔忽增忽减
+        for _port in coordinator.get_eth_ports():
+            sensors.append(
+                HuaweiEthPortSensor(
+                    coordinator,
+                    HuaweiHealthSensorEntityDescription(
+                        key=f"eth_speed_{_port.port_name.lower()}",
+                        icon="mdi:ethernet",
+                        name=f"{_port.port_name} 速率",
+                        translation_key="eth_port_speed",
+                        translation_placeholders={"port": _port.port_name},
+                        function_uid=f"sensor_eth_speed_{_port.port_name.lower()}",
+                        function_name=f"{_port.port_name} 速率",
+                        device_mac=None,
+                        device_name=None,
+                        native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+                        state_class=SensorStateClass.MEASUREMENT,
+                        suggested_display_precision=0,
+                    ),
+                    _port.port_name,
+                )
+            )
 
         # 添加主路由器的 LAN IP 传感器
         sensors.append(
@@ -474,6 +650,83 @@ async def async_setup_entry(
 
 
 # ---------------------------
+#   分组 → 设备级传感器 unique_id 映射
+# ---------------------------
+# 与 watch_for_additional_routers 里的 _groups_enabled(...) 判断保持一致；
+# 改动分组判断时必须同步更新此表，否则存量清理会漏掉实体。
+_GROUP_SENSOR_UIDS: Final = {
+    "core": (
+        _FUNCTION_UID_IP,
+        _FUNCTION_UID_MAC,
+        _FUNCTION_UID_CONNECTION_TYPE,
+        _FUNCTION_UID_CONNECTED_VIA,
+    ),
+    "signal": (
+        _FUNCTION_UID_SIGNAL,
+        _FUNCTION_UID_FREQUENCY,
+    ),
+    "speed": (
+        _FUNCTION_UID_UPLOAD_SPEED,
+        _FUNCTION_UID_DOWNLOAD_SPEED,
+    ),
+    "traffic": (
+        _FUNCTION_UID_CONNECTION_RATE,
+        _FUNCTION_UID_TX_DATA,
+        _FUNCTION_UID_RX_DATA,
+    ),
+    "info": (
+        _FUNCTION_UID_UPTIME,
+        _FUNCTION_UID_DEV_BRANDS,
+        _FUNCTION_UID_ICON_TYPE,
+        _FUNCTION_UID_PARENT_CONTROL,
+    ),
+}
+
+
+def _cleanup_for_disabled_groups(
+    coordinator: HuaweiDataUpdateCoordinator,
+    enabled_groups: set[str],
+) -> int:
+    """Remove device-level entities whose group is no longer enabled.
+
+    分组选项原先只作用于实体创建，取消勾选后存量实体不会被回收 ——
+    用户界面上看似已关闭，实体数量却纹丝不动。此函数让选项真正生效。
+
+    Returns the number of removed entities.
+    """
+    from homeassistant.helpers import entity_registry as er_mod
+
+    disabled_uids: set[str] = {
+        uid
+        for group, uids in _GROUP_SENSOR_UIDS.items()
+        if group not in enabled_groups
+        for uid in uids
+    }
+    if not disabled_uids:
+        return 0
+
+    er = er_mod.async_get(coordinator.hass)
+    removed = 0
+    for entity_entry in list(er.entities.values()):
+        if entity_entry.platform != DOMAIN:
+            continue
+        unique_id = entity_entry.unique_id or ""
+        # unique_id 形如 <entry_id>_<function_uid>_<serial>，按中段精确匹配
+        if any(f"_{uid}_" in unique_id for uid in disabled_uids):
+            er.async_remove(entity_entry.entity_id)
+            removed += 1
+            _LOGGER.debug(
+                "分组已关闭，移除存量实体: %s", entity_entry.entity_id
+            )
+
+    if removed:
+        _LOGGER.info(
+            "设备传感器分组已变更，移除 %s 个不再需要的实体", removed
+        )
+    return removed
+
+
+# ---------------------------
 #   watch_for_additional_routers
 # ---------------------------
 def watch_for_additional_routers(
@@ -493,6 +746,13 @@ def watch_for_additional_routers(
     all_watcher: HuaweiConnectedDevicesWatcher = HuaweiConnectedDevicesWatcher(
         coordinator, predicate
     )
+
+    # 分组变更后的存量清理。
+    #
+    # 分组选项原先只在「创建实体」时生效，导致用户取消勾选某个分组后，
+    # 已存在的实体原样保留 —— 配置界面显示已关闭，实体却一个没少。
+    # 这里在每次 setup 时按当前分组移除对应的存量实体，使选项真正生效。
+    _cleanup_for_disabled_groups(coordinator, _enabled_groups)
 
     # 初始清理：移除离线设备的旧传感器实体
     if skip_offline:
@@ -1414,6 +1674,86 @@ class HuaweiDiagnosticsSensor(HuaweiSensor):
         }
 
         super()._handle_coordinator_update()
+
+
+# ---------------------------
+#   HuaweiHealthSensor
+# ---------------------------
+class HuaweiHealthSensor(HuaweiSensor):
+    """Router health metric backed by a verified endpoint.
+
+    ``value_getter`` pulls the metric from the coordinator; returning None
+    marks the entity unavailable rather than publishing a bogus 0.
+    """
+
+    entity_description: HuaweiHealthSensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: HuaweiDataUpdateCoordinator,
+        description: HuaweiHealthSensorEntityDescription,
+        value_getter: Callable[[HuaweiDataUpdateCoordinator], Any | None],
+    ) -> None:
+        """Initialize."""
+        super().__init__(coordinator, description)
+        self._value_getter = value_getter
+        self._attr_native_value = None
+
+    @property
+    def available(self) -> bool:
+        """Available only while the router is online and the value exists."""
+        return (
+            self.coordinator.last_update_success
+            and self.coordinator.is_router_online(None)
+            and self._attr_native_value is not None
+        )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Pull the latest metric from the coordinator."""
+        try:
+            self._attr_native_value = self._value_getter(self.coordinator)
+        except Exception:  # noqa: BLE001 - 单个指标异常不应影响其它实体
+            _LOGGER.debug("Failed to read health metric %s", self.entity_description.key)
+            self._attr_native_value = None
+        super()._handle_coordinator_update()
+
+
+# ---------------------------
+#   HuaweiEthPortSensor
+# ---------------------------
+class HuaweiEthPortSensor(HuaweiHealthSensor):
+    """Negotiated link speed of one physical Ethernet port.
+
+    Verified on Q6 网线版: ``api/ntwk/ethnegotiation`` reports 8 ports
+    (IPTV / WAN / LAN1-6) with speeds in Mbps; 0 means the link is down.
+    """
+
+    def __init__(
+        self,
+        coordinator: HuaweiDataUpdateCoordinator,
+        description: HuaweiHealthSensorEntityDescription,
+        port_name: str,
+    ) -> None:
+        """Initialize for a fixed port name."""
+        self._port_name = port_name
+
+        def _read(coord: HuaweiDataUpdateCoordinator) -> int | None:
+            for port in coord.get_eth_ports():
+                if port.port_name == port_name:
+                    # 链路断开时 Speed 为 0，对外表达为 unknown 更准确
+                    return port.speed or None
+            return None
+
+        super().__init__(coordinator, description, _read)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the raw link status alongside the speed."""
+        for port in self.coordinator.get_eth_ports():
+            if port.port_name == self._port_name:
+                return {"port": self._port_name, "link_up": bool(port.status)}
+        return {"port": self._port_name, "link_up": False}
 
 
 # ---------------------------

@@ -936,6 +936,91 @@ class HuaweiRouterInfo:
     mac_address: str | None = None
 
 
+# ---------------------------
+#   HuaweiProcessStatus (api/system/processstatus)
+# ---------------------------
+
+@dataclass
+class HuaweiProcessStatus:
+    """CPU / memory usage of the router.
+
+    Verified on Q6 网线版 (WS8000-16, 6.1.0.20(V7R2)):
+    ``api/system/processstatus`` returns a list whose first entry is the
+    aggregate: ``{"Name": "Total", "CpuUsage": 0, "MemUsage": 46}``.
+    """
+
+    cpu_usage: int
+    mem_usage: int
+
+
+# ---------------------------
+#   HuaweiDeviceCount (api/system/device_count)
+# ---------------------------
+
+@dataclass
+class HuaweiDeviceCount:
+    """Connected device counters.
+
+    Verified payload: ``{"HiLinkDevNum": 5, "UserNumber": 1,
+    "ActiveDeviceNumbers": 97, "LanActiveNumber": 9}``.
+    """
+
+    hilink_devices: int
+    active_devices: int
+    lan_active: int
+    user_number: int
+
+
+# ---------------------------
+#   HuaweiNtpStatus (api/ntwk/sntp)
+# ---------------------------
+
+@dataclass
+class HuaweiNtpStatus:
+    """NTP synchronisation state.
+
+    Verified payload: ``{"Status": "Synchronized", "NTPServer1":
+    "cn.pool.ntp.org", "SntpIsSynchronizedStatus": true, ...}``.
+    """
+
+    synchronized: bool
+    status: str | None = None
+    server_primary: str | None = None
+    server_secondary: str | None = None
+
+
+# ---------------------------
+#   HuaweiChannelInfo (api/ntwk/channelinfo)
+# ---------------------------
+
+@dataclass
+class HuaweiChannelInfo:
+    """Current WiFi channel per band.
+
+    Verified payload exposes ``WifiStatus[].ChannelInfo[].Channel``.
+    """
+
+    channel_2g: int | None = None
+    channel_5g: int | None = None
+
+
+# ---------------------------
+#   HuaweiEthPort (api/ntwk/ethnegotiation)
+# ---------------------------
+
+@dataclass
+class HuaweiEthPort:
+    """One physical Ethernet port and its negotiated speed.
+
+    Verified payload: ``{"ethintflist": [{"Status": 1, "PortName": "WAN",
+    "Speed": 1000}, ...]}``. ``Speed`` is Mbps; 0 means link down.
+    """
+
+    port_name: str
+    speed: int
+    status: int = 0
+
+
 
 
 
