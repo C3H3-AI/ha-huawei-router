@@ -286,11 +286,45 @@ automation:
 - **实体很多/很少**：设备级实体由"设备传感器分组"选项控制，在集成配置中按需勾选；
 - **数据不更新**：确认刷新间隔 ≥ 10 秒；查看 HA 日志中 `custom_components.huawei_router` 的报错；
 - **路由器管理页面被挤下线**：旧版本存在此问题（会话冲突），请升级到 v1.12.0+；
-- **Q6 网线版**：不支持 NFC、家长控制、时间控制接口，相关实体会自动跳过，属正常现象。
+- **Q6 网线版**：不支持 NFC、网址过滤、时间控制、WPS、端口镜像（抓包流）等接口 —— 这些是
+  Web UI 多机型共用代码里的死页，本固件未实现，相关实体/服务会自动跳过或返回明确错误，
+  属正常现象。完整清单见 `docs/skills/huawei-router-control`；
+- **子路由**：Q6 网线版子路由无独立管理界面（无法单独登录/重启），但主路由可代收其诊断日志。
+
+---
+
+## 配套 Skill（AI 助手用）
+
+`docs/skills/` 收录了三个方向的 skill，供 AI 助手操作路由器时加载。安装到本机：
+
+```bash
+cp -r docs/skills/huawei-router-<name> ~/.dsh/skills/
+```
+
+| Skill | 方向 | 用途 |
+|---|---|---|
+| `huawei-router-control` | 使用 | 通过 HA 集成控制/检查路由器（状态、WiFi、设备、网络、诊断、备份）|
+| `huawei-router-standalone` | 独立 | 不依赖 HA，用 `router_cli.py` 直连路由器 LAN API |
+| `huawei-router-dev` | 逆向/开发 | 挖端点、逆向 payload、新增功能的"五件套"、机型限制清单 |
+
+skill 记录的是 HA 服务注册表给不了的**判断层**：限流红线、危险操作、以及本机型做不到的功能清单（见下）。详见 `docs/skills/README.md`。
 
 ---
 
 ## 更新日志
+### v2.0.0
+
+> ⚠️ **升级须知**：本版起设备级传感器默认只保留**基础组**（IP / MAC / 连接类型 / 连接至）。升级后部分设备级实体会消失，需要信号强度、实时速率、流量统计、设备信息的请到
+> **集成 → 配置 → 设备传感器分组** 勾选恢复。
+
+- **服务 14 → 103**：端口映射/触发、DHCP 静态保留、设备管理（改名/限速/移除）、WiFi 全系（访客网络/多 SSID/WPS/双频优选/智能连接）、DDNS、防火墙、UPnP、IPv6、IPTV、SmartVPN 等
+- **15 个路由器健康实体**：CPU / 内存使用率、在线设备数、Mesh 节点数、2.4G / 5G 信道、8 个网口协商速率、NTP 同步状态
+- **诊断日志**：`diagnostics_collect` → `diagnostics_status` → `diagnostics_download`（约 20-120 秒，实测 600+ KB）；`diagnostics_devlist` 可列出子路由，用子路由 MAC 即可采集**该子路由**的日志
+- **配置备份恢复**：`config_export` / `config_import`（加密 .conf，与 Web UI 导出一致）
+- **WiFi 射频详情**：`wifi_diag_get` 返回 2.4G / 5G 完整参数
+- **修复**：分组选项对存量实体无效的问题（改了分组却不生效）
+- **Web UI 功能面完成全量覆盖**（详见 `docs/skills/huawei-router-dev`）
+
 ### v1.12.1
 - **配置项文案补齐**：`设备传感器分组` / `跳过离线设备` / `自动关联设备` 三项此前未提供界面文案，配置页显示为英文 key。现已补齐全 6 种语言（zh-Hans / en / ru / es / pt-BR / sk），配置页可正常显示中文。
 - **修复品牌高清图缺失**：`icon@2x.png` 因 `.gitignore` 规则从未提交，从 GitHub / HACS 安装后拿不到高分屏图片。已加入白名单例外并补交。
