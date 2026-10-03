@@ -117,9 +117,12 @@ POST /api/<路径>  {"data":{...}, "csrf":{...}}   # 写操作常需 "action":"u
 
 ## 五、端点速查
 
+> ⚠️ 下面这份清单是**实测参考**，不要当成永久事实 —— 固件升级后可能变化。
+> 用 `python3 router_cli.py check` **自己探一遍**（真机只读探测，比清单可靠）。
+
 **可用**：`deviceinfo` `HostInfo` `processstatus` `device_count` `onlinestate`
 `diagnose_wlan_basic?type=1/2` `ethnegotiation` `lan` `lan_all` `lan_host`
-`wlanradio` `multi_ssid` `guest_network` `wlanfilterenhance` `homesec_abfa/stcalnet`
+`wlanradio` `guest_network` `wlanfilterenhance` `homesec_abfa/stcalnet`
 `firewall` `dmz` `portmapping` `application` `upnp` `ddns` `ipv6_wan/lan` `iptv`
 `alg` `smartvpn` `wan` `wandetect` `timedredial` `qosclass_host` `changedevicename`
 `topology` `hilink_status` `repeaterstate` `wifiscan` `channelinfo` `sntp`
@@ -128,7 +131,10 @@ POST /api/<路径>  {"data":{...}, "csrf":{...}}   # 写操作常需 "action":"u
 **404（别浪费时间）**：`bsp/nfc_switch` `ntwk/timecontrol` `ntwk/portforwarding`
 `ntwk/wps_switch` `ntwk/wlanwps` `ntwk/ipcapture` `ntwk/mirror` `poweroff`
 `powerofflist` `dps_switch` `sshRemoteState` `telnetRemoteState` `wanremoteaccess`
-`remoteaccesslist`
+`remoteaccesslist` **`ntwk/multi_ssid`**
+
+> `multi_ssid` 三种命名变体（`multi_ssid` / `multiSSID` / `multi-ssid`）**全部 404**（2026-10-03 实测）。
+> 但集成里 `multi_ssid_list` 服务**没有能力门控**，调用会直接报错 —— 已知缺陷，见 `huawei-router-dev`。
 
 ---
 

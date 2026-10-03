@@ -4,6 +4,8 @@
 只依赖 aiohttp + pycryptodome，不 import huawei_router 集成任何代码。
 
 用法:
+  python3 router_cli.py init                    # 交互生成配置文件（推荐先跑）
+  python3 router_cli.py check                   # 自检本机型功能可用性
   python3 router_cli.py status
   python3 router_cli.py devices [--online]
   python3 router_cli.py wifi
@@ -15,7 +17,9 @@
   python3 router_cli.py devlist                 # 列出可诊断设备（主路由+子路由）
   python3 router_cli.py diag <目录> [目标MAC]   # 收集+下载诊断日志（给MAC即采子路由）
 
-环境变量: HW_HOST(必填，路由器地址) HW_USER(默认 admin) HW_PASS(必填)
+配置（优先级：环境变量 > 配置文件 > 默认）:
+  环境变量 HW_HOST / HW_USER / HW_PASS
+  或配置文件 ~/.huawei-router.json（用 init 命令生成，权限 600）
 """
 import asyncio, json, os, re, sys, hashlib, hmac, time
 from random import randbytes
@@ -30,6 +34,32 @@ except ImportError:
 HOST = os.environ.get("HW_HOST", "")  # 必填：路由器管理地址，形如 http://<网关IP>
 USER = os.environ.get("HW_USER", "admin")
 PW = os.environ.get("HW_PASS", "")
+
+
+# ---------------------------
+#   配置文件支持（~/.huawei-router.json）
+# ---------------------------
+# 优先级：环境变量 > 配置文件 > 内置默认。
+# 配置文件格式（权限建议 600，内含明文密码）：
+#   {"host": "http://192.168.3.1", "user": "admin", "password": "xxx"}
+# 用 `router_cli.py init` 交互式生成，避免手写。
+CONFIG_PATH = os.path.expanduser(os.environ.get("HW_CONFIG", "~/.huawei-router.json"))
+
+
+def _load_config() -> dict:
+    """读取配置文件；不存在或损坏时返回空 dict（不报错，让环境变量兜底）。"""
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
+_cfg = _load_config()
+HOST = HOST or str(_cfg.get("host") or "")
+USER = os.environ.get("HW_USER") or str(_cfg.get("user") or "admin")
+PW = PW or str(_cfg.get("password") or "")
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
@@ -209,6 +239,129 @@ class Router:
         await asyncio.sleep(s)
 
 
+def _cmd_init() -> None:
+    """交互式生成配置文件（避免手写 JSON、避免密码进 shell 历史）。"""
+    import getpass
+
+    print(f"配置将写入: {CONFIG_PATH}")
+    if os.path.exists(CONFIG_PATH):
+        print("  （已存在，将被覆盖）")
+    cur = _load_config()
+    default_host = cur.get("host") or "http://192.168.3.1"
+    default_user = cur.get("user") or "admin"
+
+    host = input(f"路由器地址 [{default_host}]: ").strip() or default_host
+    if not host.startswith(("http://", "https://")):
+        host = "http://" + host
+    user = input(f"用户名 [{default_user}]: ").strip() or default_user
+    # getpass 不回显，且不写入 shell 历史
+    pw = getpass.getpass("密码（输入时不显示）: ")
+    if not pw:
+        sys.exit("密码不能为空")
+
+    with open(CONFIG_PATH, "w", encoding="utf-8") as fh:
+        json.dump({"host": host, "user": user, "password": pw}, fh,
+                  ensure_ascii=False, indent=2)
+    os.chmod(CONFIG_PATH, 0o600)     # 含明文密码，收紧权限
+    print(f"✅ 已写入 {CONFIG_PATH}（权限 600）")
+    print("   之后直接运行命令即可，无需再设环境变量")
+
+
+async def _cmd_check(r: "Router") -> None:
+    """自检本机型的功能可用性（真机探测，不依赖硬编码清单）。
+
+    每一项用只读 GET 看真实 HTTP 状态码：
+      200 + 有数据 = 可用；200 + 空数组 = 端点存在但无数据；404 = 本机型无。
+    探测间隔 1.5s，避免打满路由器 2-session 限额。
+    """
+    # (标签, 端点, 该功能"可用"的判定)
+    groups = [
+        ("核心", [
+            ("设备信息", "deviceinfo"),
+            ("设备列表", "HostInfo"),
+            ("CPU/内存", "processstatus"),
+            ("设备计数", "device_count"),
+            ("NTP", "sntp"),
+        ]),
+        ("WiFi", [
+            ("2.4G 射频", "system/diagnose_wlan_basic?type=1"),
+            ("5G 射频", "system/diagnose_wlan_basic?type=2"),
+            ("WiFi 射频配置", "wlanradio"),
+            ("访客网络", "guest_network"),
+            ("信道信息", "channelinfo"),
+        ]),
+        ("网络", [
+            ("LAN", "lan"),
+            ("LAN host", "lan_host"),
+            ("DHCP 服务器", "lan_server"),
+            ("网口速率", "ethnegotiation"),
+            ("端口映射", "portmapping"),
+            ("防火墙", "firewall"),
+            ("DMZ", "dmz"),
+            ("DDNS", "ddns"),
+            ("IPv6 WAN", "ipv6_wan"),
+            ("UPnP", "upnp"),
+            ("IPTV", "iptv"),
+        ]),
+        ("安全/组网", [
+            ("WiFi 过滤", "wlanfilterenhance"),
+            ("防暴力破解", "homesec_abfa"),
+            ("防蹭网", "homesec_stealnet"),
+            ("HiLink 组网", "hilink_status"),
+            ("中继状态", "repeaterstate"),
+        ]),
+        ("诊断", [
+            ("诊断设备列表", "diagnose_crash_devlist"),
+            ("诊断状态", "diagnose_crash"),
+        ]),
+    ]
+    # 已知不支持（对照用）：探测这些应返回 404
+    known_unsupported = [
+        ("NFC", "bsp/nfc_switch"),
+        ("时间控制", "ntwk/timecontrol"),
+        ("网址过滤", "ntwk/urlfilter"),
+        ("端口转发(扁平)", "ntwk/portforwarding"),
+        ("WPS", "ntwk/wps_switch"),
+        ("端口镜像", "ntwk/mirror"),
+        ("多 SSID", "ntwk/multi_ssid"),
+        ("硬件加速", "dps_switch"),
+    ]
+
+    async def probe(name: str, ep: str) -> tuple[str, str]:
+        try:
+            d = await r.get(ep)
+        except Exception as ex:  # noqa: BLE001
+            return name, f"❌ 异常 {type(ex).__name__}"
+        await r.sleep(1.5)
+        if d is None:
+            return name, "❌ 404 / 无响应"
+        if isinstance(d, list) and not d:
+            return name, "⚠️  200 但空"
+        return name, "✅ 可用"
+
+    print("路由器功能自检（真机探测）\n")
+    for title, items in groups:
+        print(f"【{title}】")
+        for name, ep in items:
+            n, verdict = await probe(name, ep)
+            print(f"  {n:16s} {verdict}")
+        print()
+
+    print("【本机型已知不支持（对照，预期 404）】")
+    unexpected = []
+    for name, ep in known_unsupported:
+        n, verdict = await probe(name, ep)
+        # 若这里返回 200 有数据，说明固件变了，需要更新 skill
+        if verdict == "✅ 可用":
+            unexpected.append(n)
+        print(f"  {n:16s} {verdict}")
+    if unexpected:
+        print(f"\n⚠️  以下功能实测可用，与文档记录的『不支持』不符 —— "
+              f"固件可能已升级，请更新 skill：{', '.join(unexpected)}")
+    else:
+        print("\n✅ 与文档记录一致（这些功能在本机型确实不可用）")
+
+
 async def cmd_endpoints(args):
     kw = args[0] if args else None
     for k in sorted(ENDPOINTS):
@@ -219,12 +372,28 @@ async def cmd_endpoints(args):
 
 async def main():
     argv = sys.argv[1:]
-    if not HOST:
-        sys.exit("请设置 HW_HOST 环境变量（路由器管理地址，形如 http://<网关IP>）")
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
         return
     cmd = argv[0]
+
+    # init 不需要连路由器，放在 HOST 校验之前
+    if cmd == "init":
+        _cmd_init()
+        return
+
+    if not HOST:
+        sys.exit(
+            f"未配置路由器地址。请任选其一：\n"
+            f"  1) 运行 `{os.path.basename(sys.argv[0])} init` 生成配置文件 {CONFIG_PATH}\n"
+            f"  2) 设置环境变量 HW_HOST（形如 http://<网关IP>）"
+        )
+    if not PW:
+        sys.exit(
+            f"未配置密码。请任选其一：\n"
+            f"  1) 运行 `{os.path.basename(sys.argv[0])} init`\n"
+            f"  2) 设置环境变量 HW_PASS"
+        )
     rest = argv[1:]
     force = "--force" in rest
     rest = [a for a in rest if a != "--force"]
@@ -296,6 +465,10 @@ async def main():
         elif cmd == "backup":
             out = rest[0] if rest else "/tmp/q6_backup.conf"
             print(json.dumps(await r.download("api/system/downloadcfg", out), ensure_ascii=False))
+
+        elif cmd == "check":
+            # 自检：把"本机型不支持清单"变成可执行验证（真机探测而非硬编码）
+            await _cmd_check(r)
 
         elif cmd == "devlist":
             devs = await r.get("diagnose_crash_devlist")
