@@ -12,7 +12,8 @@
   python3 router_cli.py endpoints [关键字]      # 列出可用短名
   python3 router_cli.py exec <短名> [k=v...]    # 通用 POST
   python3 router_cli.py backup <输出路径>       # 导出配置
-  python3 router_cli.py diag <输出目录>         # 收集并下载诊断日志
+  python3 router_cli.py devlist                 # 列出可诊断设备（主路由+子路由）
+  python3 router_cli.py diag <目录> [目标MAC]   # 收集+下载诊断日志（给MAC即采子路由）
 
 环境变量: HW_HOST(必填，路由器地址) HW_USER(默认 admin) HW_PASS(必填)
 """
@@ -296,15 +297,39 @@ async def main():
             out = rest[0] if rest else "/tmp/q6_backup.conf"
             print(json.dumps(await r.download("api/system/downloadcfg", out), ensure_ascii=False))
 
+        elif cmd == "devlist":
+            devs = await r.get("diagnose_crash_devlist")
+            print(f"可诊断设备 {len(devs)} 台：")
+            for d in devs:
+                tag = "★主路由" if d.get("IsMainDevice") else " 子路由"
+                print(f"  {tag}  {str(d.get('DeviceName'))[:26]:28s} "
+                      f"{d.get('MACAddress')}  {d.get('URL')}")
+
         elif cmd == "diag":
+            # diag [输出目录] [目标MAC] —— 给 MAC 即采集该子路由日志
             outdir = rest[0] if rest else "/tmp"
+            target_mac = rest[1] if len(rest) > 1 else None
             devlist = await r.get("diagnose_crash_devlist")
-            main_dev = next((x for x in devlist if x.get("IsMainDevice")), None)
-            mac = main_dev["MACAddress"] if main_dev else None
-            print(f"主路由: {main_dev.get('DeviceName') if main_dev else '?'} ({mac})")
+            if target_mac:
+                dev = next((x for x in devlist
+                            if str(x.get("MACAddress", "")).upper() == target_mac.upper()), None)
+                if not dev:
+                    print(f"⛔ 设备列表中找不到 MAC: {target_mac}")
+                    print("   可用设备（先跑 devlist 查看）:")
+                    for x in devlist:
+                        print(f"     {x.get('MACAddress')}  {x.get('DeviceName')}")
+                    return
+            else:
+                dev = next((x for x in devlist if x.get("IsMainDevice")), None)
+            mac = dev["MACAddress"] if dev else None
+            is_main = bool(dev.get("IsMainDevice")) if dev else True
+            print(f"目标: {dev.get('DeviceName') if dev else '?'} ({mac})"
+                  f"{'  [主路由]' if is_main else '  [子路由]'}")
             res = await r.post("diagnose_crash", {"CrashAction": "InfoCollect",
-                                                  "Mac": mac, "IsMainDev": True}, action="update")
+                                                  "Mac": mac, "IsMainDev": is_main},
+                               action="update")
             print("触发收集:", res.get("errcode") if isinstance(res, dict) else res)
+            s = None
             for i in range(40):
                 await r.sleep(2)
                 st = await r.get("diagnose_crash")
@@ -313,7 +338,8 @@ async def main():
                     print(f"[{i*2}s] {s}")
                     break
             if s == "ExecLuaSuccess":
-                out = os.path.join(outdir, "huawei_diag.tar")
+                name = "huawei_diag.tar" if is_main else f"huawei_diag_{mac.replace(':', '')}.tar"
+                out = os.path.join(outdir, name)
                 print(json.dumps(await r.download("api/system/diagnose_crash_resultdownload", out),
                                  ensure_ascii=False))
             else:
