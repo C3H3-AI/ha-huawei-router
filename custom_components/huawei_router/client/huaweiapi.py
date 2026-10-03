@@ -2350,14 +2350,41 @@ class HuaweiApi:
     async def set_endpoint_config(
         self, path: str, data: dict, action: str | None = None
     ) -> Any:
-        """对指定端点执行原始 POST，data 作为顶层 data，action 可选。"""
-        return await self._core_api.post(
-            path, data, extra_data=({"action": action} if action else None)
-        )
+        """对指定端点执行原始 POST，data 作为顶层 data，action 可选。
+
+        与 get_config 同理：端点在本机型不存在时（404）转成可读的
+        `UnsupportedActionError`，避免底层 `ApiCallError` 直接抛给用户。
+        """
+        try:
+            return await self._core_api.post(
+                path, data, extra_data=({"action": action} if action else None)
+            )
+        except ApiCallError as ex:
+            if "404" in str(ex):
+                raise UnsupportedActionError(
+                    f"本机型不支持该功能（端点 {path} 返回 404）"
+                ) from ex
+            raise
 
     async def get_config(self, path: str) -> Any:
-        """GET 配置端点，返回解析后的 JSON（dict / list）。"""
-        return await self._core_api.get(path)
+        """GET 配置端点，返回解析后的 JSON（dict / list）。
+
+        端点在本机型不存在时（HTTP 404）转成 `UnsupportedActionError` 并附可读说明
+        —— 否则调用方只看到底层 `ApiCallError`，无法区分「本机型无此功能」与
+        「参数写错了」。
+
+        这层兜底覆盖全部走 get_config 的强类型服务。Web UI 是多机型共用代码，
+        大量端点只在部分固件实现（实测 `multi_ssid` / `wps_switch` / `wlanwps`
+        在 Q6 网线版均为 404）。
+        """
+        try:
+            return await self._core_api.get(path)
+        except ApiCallError as ex:
+            if "404" in str(ex):
+                raise UnsupportedActionError(
+                    f"本机型不支持该功能（端点 {path} 返回 404）"
+                ) from ex
+            raise
 
     async def update_config(
         self, path: str, updates: dict[str, Any], action: str | None = "update"
@@ -2422,10 +2449,18 @@ class HuaweiApi:
     async def set_wps_enabled(self, enabled: bool) -> None:
         """开关 WPS（字段名 WpsEnable 已由逆向确认）。
 
-        ⚠️ 本端点在 Q6 网线版（WS8000-16, 6.1.0.20）真机 404 —— 该机型
-        未开放 WPS 管理端点，调用会抛 ApiCallError。调用方应先探测。
+        ⚠️ 本端点在 Q6 网线版（WS8000-16, 6.1.0.20）真机 404 —— 该机型未开放
+        WPS 管理端点。此处把 404 转成可读的 UnsupportedActionError，
+        让用户看到「本机型不支持」而不是底层错误。
         """
-        await self._core_api.post(URL_WPS_SWITCH, {"WpsEnable": enabled})
+        try:
+            await self._core_api.post(URL_WPS_SWITCH, {"WpsEnable": enabled})
+        except ApiCallError as ex:
+            if "404" in str(ex):
+                raise UnsupportedActionError(
+                    "本机型不支持该功能（WPS 管理端点返回 404）"
+                ) from ex
+            raise
 
     async def wps_pair_start(
         self,
@@ -2457,7 +2492,14 @@ class HuaweiApi:
             raise InvalidActionError(
                 f"Unknown WPS mode: {mode} (expected pbc / client-pin / ap-pin)"
             )
-        await self._core_api.post(URL_WLAN_WPS, payload)
+        try:
+            await self._core_api.post(URL_WLAN_WPS, payload)
+        except ApiCallError as ex:
+            if "404" in str(ex):
+                raise UnsupportedActionError(
+                    "本机型不支持该功能（WPS 端点返回 404）"
+                ) from ex
+            raise
 
     # ---------------------------
     #   WiFi 射频详情（diagnose_wlan_basic，真机已验证）
