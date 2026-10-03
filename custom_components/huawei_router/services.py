@@ -34,7 +34,7 @@ from .client.classes import (
     FilterMode,
     HuaweiGuestNetworkDuration,
 )
-from .client.huaweiapi import InvalidActionError
+from .client.huaweiapi import InvalidActionError, UnsupportedActionError
 from .client.const import (
     RAW_API_ENDPOINTS,
     URL_ACCESS_AUTH,
@@ -1808,6 +1808,9 @@ async def _async_read_config(
     try:
         _LOGGER.debug("Service '%s' called: GET %s", service.service, path)
         return await coordinator.primary_router_api.get_config(path)
+    except UnsupportedActionError as ex:
+        # 本机型不支持该端点 —— 原样透出，不要再包一层前缀
+        raise HomeAssistantError(str(ex)) from ex
     except Exception as ex:
         raise HomeAssistantError(f"{label}: {ex}")
 
@@ -1827,6 +1830,9 @@ async def _async_update_config(
             path, updates, action="update"
         )
         _LOGGER.info("%s: %s", label, updates)
+    except (InvalidActionError, UnsupportedActionError) as ex:
+        # 明确的业务错误（字段不存在 / 本机型不支持）——原样透出，不加前缀
+        raise HomeAssistantError(str(ex)) from ex
     except Exception as ex:
         raise HomeAssistantError(f"{label}: {ex}")
 
@@ -1897,6 +1903,8 @@ async def _async_wps_set_enabled(hass: HomeAssistant, service: ServiceCall):
     try:
         await coordinator.primary_router_api.set_wps_enabled(enabled)
         _LOGGER.info("WPS set to enabled=%s", enabled)
+    except UnsupportedActionError as ex:
+        raise HomeAssistantError(str(ex)) from ex
     except Exception as ex:
         raise HomeAssistantError(f"设置 WPS 开关失败: {ex}")
 
@@ -2407,14 +2415,9 @@ async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
             ap_pin_type=service.data.get("ap_pin_type", "default"),
         )
         _LOGGER.info("WPS pairing started: mode=%s", mode)
-    except InvalidActionError:
+    except (InvalidActionError, UnsupportedActionError):
         raise
     except Exception as ex:
-        msg = str(ex)
-        if "404" in msg:
-            raise HomeAssistantError(
-                "本机型未开放 WPS 管理端点（HTTP 404）——该功能在此固件上不可用"
-            )
         raise HomeAssistantError(f"触发 WPS 配对失败: {ex}")
 
 
