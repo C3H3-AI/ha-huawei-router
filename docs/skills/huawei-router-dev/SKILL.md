@@ -8,7 +8,7 @@ description: 华为凌霄 Q6 路由器（huawei_router HA 集成）的逆向与�
 面向**改代码 / 挖端点**的方向。
 日常使用（控制、检查）→ `huawei-router-control`；无 HA 独立脚本 → `huawei-router-standalone`。
 
-**当前基线**：仓库 `c3h3-ci/ha-huawei-router`，版本 **2.0.0**，服务 **102 个**。
+**当前基线**：仓库 `C3H3-AI/ha-huawei-router`（主，c3h3-ci 备用），版本 **2.0.2**，服务 **103 个**。
 
 ---
 

@@ -1,7 +1,7 @@
 # Huawei Router — Home Assistant 自定义集成
 
 [![HACS Default](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
-[![License](https://img.shields.io/github/license/c3h3-ci/ha-huawei-router)](https://github.com/c3h3-ci/ha-huawei-router/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/C3H3-AI/ha-huawei-router)](https://github.com/C3H3-AI/ha-huawei-router/blob/main/LICENSE)
 
 深度集成华为凌霄系列路由器（Q6 / Q7 / BE3 等，含网线版、子母路由等 Mesh 网络），支持设备跟踪、流量监控、WiFi 管理、端口映射、时间控制等完整功能。
 
@@ -218,7 +218,7 @@
 ### 方法一：通过 HACS（推荐）
 1. 打开 HACS → 集成
 2. 点击右上角 `⋮` → `自定义存储库`
-3. 添加仓库地址：`https://github.com/c3h3-ci/ha-huawei-router`
+3. 添加仓库地址：`https://github.com/C3H3-AI/ha-huawei-router`
 4. 类别选择：`插件`
 5. 搜索 **Huawei Router** 并安装
 6. 重启 Home Assistant
