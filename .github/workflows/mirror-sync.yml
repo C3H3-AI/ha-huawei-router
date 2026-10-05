@@ -1,0 +1,43 @@
+name: Mirror Sync from C3H3-AI
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # 每 15 分钟
+  workflow_dispatch: {}       # 支持手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mirror (c3h3-ci)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Fetch upstream (C3H3-AI)
+        run: |
+          git remote add upstream https://github.com/C3H3-AI/ha-huawei-router.git
+          git fetch upstream main --tags --force
+
+      - name: Sync if upstream moved
+        run: |
+          UPSTREAM="$(git rev-parse upstream/main)"
+          CURRENT="$(git rev-parse HEAD)"
+          echo "upstream=$UPSTREAM current=$CURRENT"
+          if [ "$UPSTREAM" = "$CURRENT" ]; then
+            echo "already in sync"
+            exit 0
+          fi
+          # 主仓库是唯一事实来源：无条件对齐（含 tags）
+          git config user.name  "mirror-sync-bot"
+          git config user.email "mirror-sync-bot@users.noreply.github.com"
+          git push --force origin "upstream/main:main"
+          # 同步 tags（删除本仓库多余的、补齐缺失的）
+          git tag -l | while read -r t; do
+            git push --delete origin "refs/tags/$t" 2>/dev/null || true
+          done
+          git push origin --tags --force
