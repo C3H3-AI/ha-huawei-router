@@ -26,9 +26,11 @@
         "step": {
             "basic_options": {
                 "data": {
-                    "scan_interval": "Intervalo de actualización"
+                    "scan_interval": "Intervalo de actualización",
+                    "fast_sensor_write_divisor": "Fast sensor publish divisor (1=publish every poll; 4=every ~2 min)",
+                    "access_switch_retention_days": "Days to keep entities of offline devices (0=forever)"
                 },
-                "title": "Configuración del WiFi Mesh de Huawei (1\/2)",
+                "title": "Configuración del WiFi Mesh de Huawei (1/2)",
                 "description": "Opciones Básicas"
             },
             "features_select": {
@@ -40,13 +42,14 @@
                     "device_tracker_zones": "Zonas para rastrear dispositivos por router",
                     "port_mapping_switches": "Switches para mapeo de puertos",
                     "url_filter_switches": "Switches para filtrado de Sitios Web",
-                    "event_entities": "Entidades de eventos",                    
+                    "event_entities": "Entidades de eventos",
                     "time_control_switches": "Switches de control de tiempo de acceso",
                     "device_sensor_groups": "Grupos de sensores de dispositivos",
                     "skip_offline_devices": "Omitir dispositivos offline",
-                    "auto_associate_devices": "Asociación automática de dispositivos"
+                    "auto_associate_devices": "Asociación automática de dispositivos",
+                    "device_mac_sensors": "MAC address sensors (duplicated in device registry; recommended off)"
                 },
-                "title": "Configuración del WiFi Mesh de Huawei (2\/2)",
+                "title": "Configuración del WiFi Mesh de Huawei (2/2)",
                 "description": "Características Adicionales"
             }
         }

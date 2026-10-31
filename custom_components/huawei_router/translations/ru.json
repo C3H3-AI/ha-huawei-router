@@ -26,9 +26,11 @@
         "step": {
             "basic_options": {
                 "data": {
-                    "scan_interval": "Период обновления"
+                    "scan_interval": "Период обновления",
+                    "fast_sensor_write_divisor": "Fast sensor publish divisor (1=publish every poll; 4=every ~2 min)",
+                    "access_switch_retention_days": "Days to keep entities of offline devices (0=forever)"
                 },
-                "title": "Настройка интеграции mesh маршрутизатора Huawei (1\/2)",
+                "title": "Настройка интеграции mesh маршрутизатора Huawei (1/2)",
                 "description": "Базовые настройки"
             },
             "features_select": {
@@ -44,9 +46,10 @@
                     "time_control_switches": "Выключатели контроля времени доступа",
                     "device_sensor_groups": "Группы сенсоров устройств",
                     "skip_offline_devices": "Пропускать offline-устройства",
-                    "auto_associate_devices": "Автосвязывание устройств"
+                    "auto_associate_devices": "Автосвязывание устройств",
+                    "device_mac_sensors": "MAC address sensors (duplicated in device registry; recommended off)"
                 },
-                "title": "Настройка интеграции mesh маршрутизатора Huawei (2\/2)",
+                "title": "Настройка интеграции mesh маршрутизатора Huawei (2/2)",
                 "description": "Расширенная функциональность"
             }
         }

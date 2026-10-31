@@ -25,6 +25,7 @@ from .const import (
     DEFAULT_TIME_CONTROL_SWITCHES,
     DEFAULT_SKIP_OFFLINE_DEVICES,
     DEFAULT_AUTO_ASSOCIATE_DEVICES,
+    CONFIG_VERSION,
     DOMAIN,
     OPT_DEVICE_TRACKER,
     OPT_DEVICE_TRACKER_ZONES,
@@ -37,6 +38,7 @@ from .const import (
     OPT_TIME_CONTROL_SWITCHES,
     OPT_SKIP_OFFLINE_DEVICES,
     OPT_AUTO_ASSOCIATE_DEVICES,
+    OPT_DEVICE_MAC_SENSORS,
     PLATFORMS,
     STORAGE_VERSION,
 )
@@ -221,6 +223,13 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         updated_options[OPT_SKIP_OFFLINE_DEVICES] = DEFAULT_SKIP_OFFLINE_DEVICES
         updated_options[OPT_AUTO_ASSOCIATE_DEVICES] = DEFAULT_AUTO_ASSOCIATE_DEVICES
         config_entry.version = 7
+
+    if config_entry.version == 7:
+        # v8 引入 device_mac_sensors（新装默认不建 MAC 传感器）。
+        # 存量入口显式写 True 保持升级前后行为一致，不悄悄删实体。
+        _LOGGER.debug("Migrating to version 8")
+        updated_options.setdefault(OPT_DEVICE_MAC_SENSORS, True)
+        config_entry.version = CONFIG_VERSION
 
     hass.config_entries.async_update_entry(
         config_entry, data=updated_data, options=updated_options

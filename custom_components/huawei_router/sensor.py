@@ -348,7 +348,7 @@ async def async_setup_entry(
 
         # ---------------- 健康监控（端点均经真机验证） ----------------
         sensors.append(
-            HuaweiHealthSensor(
+            HuaweiThrottledHealthSensor(
                 coordinator,
                 HuaweiHealthSensorEntityDescription(
                     key="cpu_usage",
@@ -367,7 +367,7 @@ async def async_setup_entry(
         )
 
         sensors.append(
-            HuaweiHealthSensor(
+            HuaweiThrottledHealthSensor(
                 coordinator,
                 HuaweiHealthSensorEntityDescription(
                     key="mem_usage",
@@ -677,6 +677,7 @@ _GROUP_SENSOR_UIDS: Final = {
 def _cleanup_for_disabled_groups(
     coordinator: HuaweiDataUpdateCoordinator,
     enabled_groups: set[str],
+    extra_disabled_uids: set[str] | None = None,
 ) -> int:
     """Remove device-level entities whose group is no longer enabled.
 
@@ -693,6 +694,8 @@ def _cleanup_for_disabled_groups(
         if group not in enabled_groups
         for uid in uids
     }
+    if extra_disabled_uids:
+        disabled_uids |= extra_disabled_uids
     if not disabled_uids:
         return 0
 
@@ -742,7 +745,11 @@ def watch_for_additional_routers(
     # 分组选项原先只在「创建实体」时生效，导致用户取消勾选某个分组后，
     # 已存在的实体原样保留 —— 配置界面显示已关闭，实体却一个没少。
     # 这里在每次 setup 时按当前分组移除对应的存量实体，使选项真正生效。
-    _cleanup_for_disabled_groups(coordinator, _enabled_groups)
+    # MAC 地址传感器独立开关：关闭时连存量一起清理（值与设备注册表/tracker 属性重复）
+    _mac_disabled_uids = (
+        set() if integration_options.device_mac_sensors else {_FUNCTION_UID_MAC}
+    )
+    _cleanup_for_disabled_groups(coordinator, _enabled_groups, _mac_disabled_uids)
 
     # 初始清理：移除离线设备的旧传感器实体
     if skip_offline:
@@ -871,7 +878,7 @@ def watch_for_additional_routers(
                 _LOGGER.error("  Failed to create IP sensor for %s: %s", router.name, ex)
         
         # 为子路由器添加 MAC 地址传感器
-        if _groups_enabled("core") and not known_mac_sensors.get(mac):
+        if _groups_enabled("core") and integration_options.device_mac_sensors and not known_mac_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_mac",
@@ -1150,7 +1157,7 @@ def watch_for_additional_routers(
             except Exception as ex:
                 _LOGGER.error("  Failed to create IP sensor for %s: %s", device.name, ex)
 
-        if _groups_enabled("core") and not known_mac_sensors.get(mac):
+        if _groups_enabled("core") and integration_options.device_mac_sensors and not known_mac_sensors.get(mac):
             try:
                 description = HuaweiWanSensorEntityDescription(
                     key=f"{mac}_mac",
@@ -1421,6 +1428,39 @@ def watch_for_additional_routers(
 # ---------------------------
 #   HuaweiSensor
 # ---------------------------
+# ---------------------------
+#   HuaweiThrottledUpdateMixin
+# ---------------------------
+class HuaweiThrottledUpdateMixin:
+    """易变量传感器的对外发布降频。
+
+    内部每轮仍读取最新值，但只有每第 N 轮（fast_sensor_write_divisor，
+    默认 4 ≈ 2 分钟）以及协调器失败/恢复轮才真正写状态——
+    WAN 速率、CPU/内存、收发流量这类 30s 一变的实体是 recorder 的
+    写入大户，发布降频把行数压到 1/N。N=1 等价于原行为。
+    """
+
+    _publish_tick: int = -1  # -1 = 尚未发布过 → 加载后首轮立即发布
+
+    def _should_publish_now(self) -> bool:
+        """Return True when this cycle should publish state to HA."""
+        divisor = max(1, self.coordinator.fast_sensor_write_divisor)
+        if divisor == 1:
+            return True
+        if self._publish_tick < 0:
+            self._publish_tick = 0
+            return True
+        self._publish_tick = (self._publish_tick + 1) % divisor
+        # 协调器失败/恢复轮必须立即发布，避免可用性变化被节流吞掉
+        return self._publish_tick == 0 or not self.coordinator.last_update_success
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator (throttled)."""
+        if not self._should_publish_now():
+            return
+        super()._handle_coordinator_update()
+
 class HuaweiSensor(CoordinatorEntity[HuaweiDataUpdateCoordinator], SensorEntity):
     entity_description: HuaweiSensorEntityDescription
     _attr_has_entity_name = True
@@ -1664,6 +1704,9 @@ class HuaweiDiagnosticsSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiHealthSensor
 # ---------------------------
+class HuaweiThrottledHealthSensor(HuaweiThrottledUpdateMixin, HuaweiHealthSensor):
+    """高频变化（CPU/内存等）的健康指标，对外发布按 divisor 降频。"""
+
 class HuaweiHealthSensor(HuaweiSensor):
     """Router health metric backed by a verified endpoint.
 
@@ -2089,7 +2132,7 @@ class HuaweiDeviceSignalSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiDeviceUploadSpeedSensor
 # ---------------------------
-class HuaweiDeviceUploadSpeedSensor(HuaweiSensor):
+class HuaweiDeviceUploadSpeedSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     """上传速度传感器 - 显示设备的上传速度"""
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: float | None = None
@@ -2122,7 +2165,7 @@ class HuaweiDeviceUploadSpeedSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiDeviceDownloadSpeedSensor
 # ---------------------------
-class HuaweiDeviceDownloadSpeedSensor(HuaweiSensor):
+class HuaweiDeviceDownloadSpeedSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     """下载速度传感器 - 显示设备的下载速度"""
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: float | None = None
@@ -2155,7 +2198,7 @@ class HuaweiDeviceDownloadSpeedSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiDeviceConnectionRateSensor - WiFi连接速率(Mbps)
 # ---------------------------
-class HuaweiDeviceConnectionRateSensor(HuaweiSensor):
+class HuaweiDeviceConnectionRateSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     """WiFi连接速率传感器"""
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: int | None = None
@@ -2264,7 +2307,7 @@ class HuaweiDeviceTypeSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiDeviceTxDataSensor - 发送流量
 # ---------------------------
-class HuaweiDeviceTxDataSensor(HuaweiSensor):
+class HuaweiDeviceTxDataSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     """发送流量传感器"""
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: str | None = None
@@ -2295,7 +2338,7 @@ class HuaweiDeviceTxDataSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiDeviceRxDataSensor - 接收流量
 # ---------------------------
-class HuaweiDeviceRxDataSensor(HuaweiSensor):
+class HuaweiDeviceRxDataSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     """接收流量传感器"""
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: str | None = None
@@ -2417,7 +2460,7 @@ class HuaweiWanIpv6Sensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiWanSpeedSensor
 # ---------------------------
-class HuaweiWanSpeedSensor(HuaweiSensor):
+class HuaweiWanSpeedSensor(HuaweiThrottledUpdateMixin, HuaweiSensor):
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: float = 0.0
 

@@ -26,9 +26,11 @@
         "step": {
             "basic_options": {
                 "data": {
-                    "scan_interval": "Intervalo de atualização"
+                    "scan_interval": "Intervalo de atualização",
+                    "fast_sensor_write_divisor": "Fast sensor publish divisor (1=publish every poll; 4=every ~2 min)",
+                    "access_switch_retention_days": "Days to keep entities of offline devices (0=forever)"
                 },
-                "title": "Configuração do roteador mesh Huawei (1\/2)",
+                "title": "Configuração do roteador mesh Huawei (1/2)",
                 "description": "Opções básicas"
             },
             "features_select": {
@@ -44,9 +46,10 @@
                     "time_control_switches": "Interruptores de controle de tempo de acesso",
                     "device_sensor_groups": "Grupos de sensores de dispositivos",
                     "skip_offline_devices": "Ignorar dispositivos offline",
-                    "auto_associate_devices": "Associação automática de dispositivos"
+                    "auto_associate_devices": "Associação automática de dispositivos",
+                    "device_mac_sensors": "MAC address sensors (duplicated in device registry; recommended off)"
                 },
-                "title": "Configuração do roteador mesh Huawei (2\/2)",
+                "title": "Configuração do roteador mesh Huawei (2/2)",
                 "description": "Características adicionais"
             }
         }

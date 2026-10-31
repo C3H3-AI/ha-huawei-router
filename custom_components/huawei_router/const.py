@@ -34,6 +34,14 @@ OPT_TIME_CONTROL_SWITCHES = "time_control_switches"
 OPT_SKIP_OFFLINE_DEVICES = "skip_offline_devices"
 OPT_AUTO_ASSOCIATE_DEVICES = "auto_associate_devices"
 OPT_DEVICE_SENSOR_GROUPS = "device_sensor_groups"
+OPT_DEVICE_MAC_SENSORS = "device_mac_sensors"
+OPT_FAST_SENSOR_WRITE_DIVISOR = "fast_sensor_write_divisor"
+OPT_ACCESS_SWITCH_RETENTION_DAYS = "access_switch_retention_days"
+
+# 配置入口结构版本（async_migrate_entry 链与之对齐）。
+# v8: 引入 device_mac_sensors 选项；存量入口迁移时显式写 True 保持原行为，
+#     新建入口由 config_flow 直接以 v8 创建（走默认 False）。
+CONFIG_VERSION: Final = 8
 
 # 设备级传感器分组:控制每台设备生成哪些实体
 DEVICE_SENSOR_GROUP_OPTIONS: Final = {
@@ -89,6 +97,20 @@ DEFAULT_EVENT_ENTITIES: Final = True
 DEFAULT_TIME_CONTROL_SWITCHES: Final = True
 DEFAULT_SKIP_OFFLINE_DEVICES: Final = True
 DEFAULT_AUTO_ASSOCIATE_DEVICES: Final = True
+
+# MAC 地址传感器：静态值且与设备注册表/tracker 属性重复，新装默认不建。
+# 存量入口经 async_migrate_entry 显式写 True，升级不悄悄删实体。
+DEFAULT_DEVICE_MAC_SENSORS: Final = False
+
+# 易变量传感器（WAN 上/下行、CPU/内存、连接速率、收发流量）对外发布频率
+# = scan_interval × N。默认 4（30s 轮询 → 约 2min 发布一次），1 = 原行为。
+DEFAULT_FAST_SENSOR_WRITE_DIVISOR: Final = 4
+MIN_FAST_SENSOR_WRITE_DIVISOR: Final = 1
+MAX_FAST_SENSOR_WRITE_DIVISOR: Final = 60
+
+# 设备离网超过 N 天后清理其 tracker/开关/传感器实体；0 = 不清理。
+# 设备再次上线时实体会自动重建，device entry 与区域归属保留。
+DEFAULT_ACCESS_SWITCH_RETENTION_DAYS: Final = 0
 
 ATTR_MANUFACTURER: Final = "Huawei"
 

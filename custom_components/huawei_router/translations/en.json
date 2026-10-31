@@ -69,7 +69,9 @@
     "step": {
       "basic_options": {
         "data": {
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "fast_sensor_write_divisor": "Fast sensor publish divisor (1=publish every poll; 4≈every 2 min)",
+          "access_switch_retention_days": "Days to keep entities of offline devices (0=forever)"
         },
         "title": "Huawei mesh router setup (1/2)",
         "description": "Basic options"
@@ -87,7 +89,8 @@
           "time_control_switches": "Access time control switches",
           "device_sensor_groups": "Device sensor groups",
           "skip_offline_devices": "Skip offline devices",
-          "auto_associate_devices": "Auto-associate devices"
+          "auto_associate_devices": "Auto-associate devices",
+          "device_mac_sensors": "MAC address sensors (duplicated in device registry; recommended off)"
         },
         "title": "Huawei mesh router setup (2/2)",
         "description": "Additional features"

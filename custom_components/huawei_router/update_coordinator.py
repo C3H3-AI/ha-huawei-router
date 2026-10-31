@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 
 from datetime import timedelta
 
@@ -117,7 +118,7 @@ from .client.const import CONNECTED_VIA_ID_PRIMARY
 
 from .client.huaweiapi import HuaweiApi
 
-from .const import ATTR_MANUFACTURER, DOMAIN
+from .const import ATTR_MANUFACTURER, DOMAIN, STORAGE_VERSION
 
 from .options import HuaweiIntegrationOptions
 
@@ -562,6 +563,20 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
         self._wan_info: HuaweiConnectionInfo | None = None
 
+        # 设备最近在线时间（10 分钟粒度），用于「僵尸设备实体清理」选项。
+        # mac 不在表里 = 尚未观测到过在线 → 一律视为不 stale，避免升级后
+        # 空表导致全量误删；表随设备上线逐步填充。
+        self._last_active_store: Store = Store(
+            self.hass,
+            STORAGE_VERSION,
+            f"huawei_mesh_{config_entry.entry_id}_last_active",
+        )
+        self._last_active: dict[str, int] = {}
+        self._last_active_loaded: bool = False
+        self._last_active_save_at: float = 0.0
+        self._stale_cleanup_tick: int = 0
+        self._collision_logged: set[str] = set()
+
         # 健康监控数据（端点均已真机验证）
         self._process_status: HuaweiProcessStatus | None = None
         self._device_count: HuaweiDeviceCount | None = None
@@ -944,6 +959,10 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         self._associate_tick += 1
         if self._is_initial_update or self._associate_tick % 5 == 1:
             await self._auto_associate_devices()
+        # 僵尸设备实体清理：每 20 轮（约 10 分钟）检查一次
+        self._stale_cleanup_tick += 1
+        if self._stale_cleanup_tick % 20 == 0:
+            await self._async_cleanup_stale_device_entities()
 
         await self._update_apis()
 
@@ -2119,6 +2138,86 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 )
 
         self._logger.debug("Connected devices updated")
+        await self._async_track_device_active()
+
+    # ---------------------------
+    #   僵尸设备实体清理（access_switch_retention_days）
+    # ---------------------------
+    async def _async_track_device_active(self) -> None:
+        """记录最近在线时间（10 分钟粒度，变更才落盘）。
+
+        作为 `access_switch_retention_days` 选项的数据底座：设备离网超过
+        N 天后，其 tracker/开关/传感器实体可被清理，再上线自动重建。
+        """
+        if not self._last_active_loaded:
+            self._last_active = await self._last_active_store.async_load() or {}
+            self._last_active_loaded = True
+            self._logger.debug("Last-active map loaded: %d entries", len(self._last_active))
+        now_bucket = int(time.time() // 600) * 600
+        dirty = False
+        for mac, device in self._connected_devices.items():
+            if device.is_active:
+                if self._last_active.get(mac) != now_bucket:
+                    self._last_active[mac] = now_bucket
+                    dirty = True
+        if dirty and (time.time() - self._last_active_save_at) > 300:
+            self._last_active_save_at = time.time()
+            await self._last_active_store.async_save(self._last_active)
+
+    def _retention_seconds(self) -> int:
+        """Return the configured stale-device retention in seconds (0 = off)."""
+        days = self._integration_options.access_switch_retention_days
+        return days * 86400 if days > 0 else 0
+
+    def is_device_stale(self, mac: MAC_ADDR) -> bool:
+        """Return True when the device has been offline longer than retention.
+
+        从未观测到在线的 mac 恒为 False（保护升级后的空表窗口）。
+        """
+        retention = self._retention_seconds()
+        if retention <= 0 or not self._last_active_loaded:
+            return False
+        last = self._last_active.get(mac)
+        if last is None:
+            return False
+        return (time.time() - last) > retention
+
+    @property
+    def fast_sensor_write_divisor(self) -> int:
+        """Return the publish divisor for fast-changing sensors (1 = every cycle)."""
+        return self._integration_options.fast_sensor_write_divisor
+
+    async def _async_cleanup_stale_device_entities(self) -> int:
+        """移除离网超过保留期的设备在本集成下的全部实体。
+
+        只清 entity_registry（tracker/开关/传感器），device entry 保留，
+        避免动用户的区域与命名；设备重新上线时实体会自动重建。
+        Returns the number of removed entities.
+        """
+        if self._retention_seconds() <= 0 or not self._last_active_loaded:
+            return 0
+        stale_macs = {
+            mac for mac in list(self._connected_devices) if self.is_device_stale(mac)
+        }
+        if not stale_macs:
+            return 0
+        er = entity_registry.async_get(self.hass)
+        removed = 0
+        for entity_entry in list(er.entities.values()):
+            if entity_entry.platform != DOMAIN:
+                continue
+            uid = (entity_entry.unique_id or "").lower()
+            if not any(mac.lower().replace(":", "_") in uid for mac in stale_macs):
+                continue
+            er.async_remove(entity_entry.entity_id)
+            removed += 1
+        if removed:
+            self._logger.info(
+                "清理离网超过 %d 天的设备实体 %d 个（设备再上线会自动重建）",
+                self._integration_options.access_switch_retention_days,
+                removed,
+            )
+        return removed
 
     def _select_api(self, device_mac: MAC_ADDR | None) -> HuaweiApi:
 
@@ -2653,6 +2752,24 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 c[1] for c in sonoff_device.connections if c[0] == "mac"
             }
             if mac not in existing_macs:
+                # 该 MAC 可能已被其它设备条目（如本集成为客户端建的条目）占用，
+                # 直接写 connections 会抛 DeviceConnectionCollisionError 并刷屏
+                mac_owner = next(
+                    iter(
+                        dev_reg.async_get_devices(connections={("mac", mac)})
+                    ),
+                    None,
+                )
+                if mac_owner is not None and mac_owner.id != sonoff_device.id:
+                    if mac not in self._collision_logged:
+                        self._collision_logged.add(mac)
+                        self._logger.debug(
+                            "MAC %s 已被设备 %s 占用，跳过自动关联",
+                            mac,
+                            mac_owner.name or mac_owner.id,
+                        )
+                    skipped += 1
+                    continue
                 dev_reg.async_update_device(
                     sonoff_device.id,
                     new_connections={("mac", mac)},

@@ -93,11 +93,18 @@ def update_items(
 
     for mac, device in coordinator.connected_devices.items():
 
-        if mac not in tracked:
+        if mac in tracked:
 
-            tracked[mac] = HuaweiTracker(device, integration_options, coordinator)
+            continue
 
-            new_tracked.append(tracked[mac])
+        # 离网超过保留期的设备不再建 tracker（协调器会回收存量实体）
+        if coordinator.is_device_stale(mac):
+
+            continue
+
+        tracked[mac] = HuaweiTracker(device, integration_options, coordinator)
+
+        new_tracked.append(tracked[mac])
 
     if new_tracked:
 
