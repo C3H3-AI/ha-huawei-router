@@ -1314,7 +1314,8 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
             er = entity_registry.async_get(self.hass)
 
-            for er_entity_id, er_entry in er.entities.items():
+            # 迭代 values() 是实体注册表推荐的枚举方式（映射式 items()/get() 未来会被限制）
+            for er_entry in er.entities.values():
 
                 if er_entry.domain == ZONE_DOMAIN:
 
@@ -1322,7 +1323,7 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
 
                         name=er_entry.name or er_entry.original_name,
 
-                        entity_id=er_entity_id,
+                        entity_id=er_entry.entity_id,
 
                     )
 
@@ -2961,7 +2962,8 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                     device_names[device_id] = name
 
         restored = 0
-        for device in dev_reg.devices.values():
+        # 直接迭代 registry.devices 是支持的枚举方式；.values() 属于已弃用的映射式访问（2027.9 失效）
+        for device in dev_reg.devices:
             if not any(i[0] == "sonoff" for i in device.identifiers):
                 continue
 
@@ -3032,9 +3034,12 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 skipped += 1
                 continue
 
-            sonoff_device = dev_reg.async_get_device(
+            # async_get_device 已弃用（2027.8 失效）；sonoff 设备属于其它集成，
+            # 用 async_get_devices 按标识符匹配后取首个
+            sonoff_matches = dev_reg.async_get_devices(
                 identifiers={("sonoff", device_id)}
             )
+            sonoff_device = sonoff_matches[0] if sonoff_matches else None
             if not sonoff_device:
                 continue
 
@@ -3048,8 +3053,14 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 linked += 1
 
-            huawei_device = dev_reg.async_get_device(
-                identifiers={(DOMAIN, mac.upper())}
+            huawei_device = next(
+                iter(
+                    dev_reg.async_get_devices(
+                        identifiers={(DOMAIN, mac.upper())},
+                        config_entry_id=self.config_entry.entry_id,
+                    )
+                ),
+                None,
             )
             if not huawei_device or huawei_device.id == sonoff_device.id:
                 continue
@@ -3103,8 +3114,16 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
                 continue
             mac_upper = mac_part.upper()
             mac_lower = mac_upper.lower()
-            device_entry = dev_reg.async_get_device(
-                identifiers={(DOMAIN, mac_upper)}
+            # async_get_device 已弃用（2027.8 失效）；孤儿设备归属本集成，
+            # 用带 config_entry_id 过滤的 async_get_devices 精确查找
+            device_entry = next(
+                iter(
+                    dev_reg.async_get_devices(
+                        identifiers={(DOMAIN, mac_upper)},
+                        config_entry_id=config_entry_id,
+                    )
+                ),
+                None,
             )
             if not device_entry:
                 device_entry = dev_reg.async_get_or_create(

@@ -7,8 +7,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import (
-    DeviceEntry,
     async_get as async_get_device_registry,
 )
 from homeassistant.helpers.storage import Store
@@ -133,9 +133,9 @@ async def _async_update_primary_router_name(hass, config_entry, coordinator) -> 
     primary_serial = router_info.serial_number
 
     device_reg = async_get_device_registry(hass)
-    for device in device_reg.devices.values():
-        if config_entry.entry_id not in device.config_entries:
-            continue
+    # registry.devices 的映射式访问（.values()/.get()）与 DeviceEntry.config_entries
+    # 均已弃用（分别于 HA 2027.9 / 2027.10 失效），改用官方查询助手。
+    for device in dr.async_entries_for_config_entry(device_reg, config_entry.entry_id):
         id_tuples = set(device.identifiers)
         if (DOMAIN, primary_serial) in id_tuples and device.name_by_user is None:
             if device.name != actual_name:
