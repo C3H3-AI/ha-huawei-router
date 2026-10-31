@@ -54,6 +54,10 @@ from .const import (
     DEFAULT_VERIFY_SSL,
     DEFAULT_WIFI_ACCESS_SWITCHES,
     DEFAULT_AUTO_ASSOCIATE_DEVICES,
+    DEFAULT_DEVICE_MAC_SENSORS,
+    DEFAULT_FAST_SENSOR_WRITE_DIVISOR,
+    DEFAULT_ACCESS_SWITCH_RETENTION_DAYS,
+    CONFIG_VERSION,
     DEFAULT_DEVICE_SENSOR_GROUPS,
     DEVICE_SENSOR_GROUP_OPTIONS,
     OPT_DEVICE_SENSOR_GROUPS,
@@ -69,6 +73,9 @@ from .const import (
     OPT_URL_FILTER_SWITCHES,
     OPT_WIFI_ACCESS_SWITCHES,
     OPT_AUTO_ASSOCIATE_DEVICES,
+    OPT_DEVICE_MAC_SENSORS,
+    OPT_FAST_SENSOR_WRITE_DIVISOR,
+    OPT_ACCESS_SWITCH_RETENTION_DAYS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -179,7 +186,11 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
                 return self.async_create_entry(
 
-                    title=user_input[CONF_NAME], data=user_input
+                    title=user_input[CONF_NAME],
+
+                    data=user_input,
+
+                    version=CONFIG_VERSION,
 
                 )
 
@@ -315,6 +326,34 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
 
                     ): int,
 
+                    vol.Required(
+
+                        OPT_FAST_SENSOR_WRITE_DIVISOR,
+
+                        default=self._local_config_entry.options.get(
+
+                            OPT_FAST_SENSOR_WRITE_DIVISOR,
+
+                            DEFAULT_FAST_SENSOR_WRITE_DIVISOR,
+
+                        ),
+
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+
+                    vol.Required(
+
+                        OPT_ACCESS_SWITCH_RETENTION_DAYS,
+
+                        default=self._local_config_entry.options.get(
+
+                            OPT_ACCESS_SWITCH_RETENTION_DAYS,
+
+                            DEFAULT_ACCESS_SWITCH_RETENTION_DAYS,
+
+                        ),
+
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=365)),
+
                 }
 
             ),
@@ -358,6 +397,18 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
                         default=self.options.get(
 
                             OPT_WIFI_ACCESS_SWITCHES, DEFAULT_WIFI_ACCESS_SWITCHES
+
+                        ),
+
+                    ): bool,
+
+                    vol.Required(
+
+                        OPT_DEVICE_MAC_SENSORS,
+
+                        default=self.options.get(
+
+                            OPT_DEVICE_MAC_SENSORS, DEFAULT_DEVICE_MAC_SENSORS
 
                         ),
 

@@ -379,6 +379,21 @@ def watch_for_wireless_devices(coordinator, config_entry, async_add_entities):
         coordinator
     )
 
+    # 选项关闭时回收存量实体（此前关闭选项只影响新建，旧开关会永久残留）
+    if not is_wifi_switches_enabled:
+        from homeassistant.helpers import entity_registry as er_mod
+        er = er_mod.async_get(coordinator.hass)
+        removed = 0
+        for entity_entry in list(er.entities.values()):
+            if (entity_entry.platform == DOMAIN
+                and entity_entry.unique_id
+                and _FUNCTION_ID_DEVICE_ACCESS in entity_entry.unique_id):
+                er.async_remove(entity_entry.entity_id)
+                removed += 1
+        if removed:
+            _LOGGER.info("设备WiFi访问开关已关闭，移除存量实体 %d 个", removed)
+        return
+
     # 初始清理：移除离线设备的 WiFi 访问开关实体
     if skip_offline and is_wifi_switches_enabled:
         from homeassistant.helpers import entity_registry as er_mod
@@ -397,6 +412,8 @@ def watch_for_wireless_devices(coordinator, config_entry, async_add_entities):
     def on_wireless_device_added(device_mac: MAC_ADDR, device: ConnectedDevice) -> None:
         """When a new wireless device is detected."""
         if skip_offline and not device.is_active:
+            return
+        if coordinator.is_device_stale(device_mac):
             return
         coordinator.hass.async_create_task(
             _add_access_switch_if_available(

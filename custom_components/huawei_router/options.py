@@ -19,6 +19,11 @@ from .const import (
     DEFAULT_URL_FILTER_SWITCHES,
     DEFAULT_WIFI_ACCESS_SWITCHES,
     DEFAULT_AUTO_ASSOCIATE_DEVICES,
+    DEFAULT_DEVICE_MAC_SENSORS,
+    DEFAULT_FAST_SENSOR_WRITE_DIVISOR,
+    MIN_FAST_SENSOR_WRITE_DIVISOR,
+    MAX_FAST_SENSOR_WRITE_DIVISOR,
+    DEFAULT_ACCESS_SWITCH_RETENTION_DAYS,
     OPT_DEVICE_TRACKER,
     OPT_DEVICE_TRACKER_ZONES,
     OPT_DEVICES_TAGS,
@@ -31,6 +36,9 @@ from .const import (
     OPT_WIFI_ACCESS_SWITCHES,
     OPT_AUTO_ASSOCIATE_DEVICES,
     OPT_DEVICE_SENSOR_GROUPS,
+    OPT_DEVICE_MAC_SENSORS,
+    OPT_FAST_SENSOR_WRITE_DIVISOR,
+    OPT_ACCESS_SWITCH_RETENTION_DAYS,
 )
 
 # ---------------------------
@@ -205,4 +213,41 @@ class HuaweiIntegrationOptions:
             OPT_AUTO_ASSOCIATE_DEVICES,
             DEFAULT_AUTO_ASSOCIATE_DEVICES,
         )
+
+    @property
+    def device_mac_sensors(self) -> bool:
+        """Return option 'device mac sensors' value"""
+        return get_option(
+            self._config_entry,
+            OPT_DEVICE_MAC_SENSORS,
+            DEFAULT_DEVICE_MAC_SENSORS,
+        )
+
+    @property
+    def fast_sensor_write_divisor(self) -> int:
+        """Return option 'fast sensor write divisor' value (1 = publish every cycle)"""
+        value = get_option(
+            self._config_entry,
+            OPT_FAST_SENSOR_WRITE_DIVISOR,
+            DEFAULT_FAST_SENSOR_WRITE_DIVISOR,
+        )
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return DEFAULT_FAST_SENSOR_WRITE_DIVISOR
+        return max(MIN_FAST_SENSOR_WRITE_DIVISOR, min(MAX_FAST_SENSOR_WRITE_DIVISOR, value))
+
+    @property
+    def access_switch_retention_days(self) -> int:
+        """Return option 'access switch retention days' value (0 = keep forever)"""
+        value = get_option(
+            self._config_entry,
+            OPT_ACCESS_SWITCH_RETENTION_DAYS,
+            DEFAULT_ACCESS_SWITCH_RETENTION_DAYS,
+        )
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return DEFAULT_ACCESS_SWITCH_RETENTION_DAYS
+        return max(0, value)
 

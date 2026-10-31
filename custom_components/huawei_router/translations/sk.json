@@ -26,9 +26,11 @@
         "step": {
             "basic_options": {
                 "data": {
-                    "scan_interval": "Interval aktualizácie"
+                    "scan_interval": "Interval aktualizácie",
+                    "fast_sensor_write_divisor": "Fast sensor publish divisor (1=publish every poll; 4=every ~2 min)",
+                    "access_switch_retention_days": "Days to keep entities of offline devices (0=forever)"
                 },
-                "title": "Nastavenie sieťového smerovača Huawei (1\/2)",
+                "title": "Nastavenie sieťového smerovača Huawei (1/2)",
                 "description": "Základné možnosti"
             },
             "features_select": {
@@ -44,9 +46,10 @@
                     "time_control_switches": "Prepínače riadenia času prístupu",
                     "device_sensor_groups": "Skupiny senzorov zariadení",
                     "skip_offline_devices": "Preskočiť offline zariadenia",
-                    "auto_associate_devices": "Automatické priradenie zariadení"
+                    "auto_associate_devices": "Automatické priradenie zariadení",
+                    "device_mac_sensors": "MAC address sensors (duplicated in device registry; recommended off)"
                 },
-                "title": "Huawei mesh router nastavenie (2\/2)",
+                "title": "Huawei mesh router nastavenie (2/2)",
                 "description": "Pridané vlastnosti"
             }
         }
