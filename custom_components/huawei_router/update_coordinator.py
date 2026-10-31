@@ -567,7 +567,7 @@ class HuaweiDataUpdateCoordinator(DataUpdateCoordinator):
         # mac 不在表里 = 尚未观测到过在线 → 一律视为不 stale，避免升级后
         # 空表导致全量误删；表随设备上线逐步填充。
         self._last_active_store: Store = Store(
-            self.hass,
+            hass,
             STORAGE_VERSION,
             f"huawei_mesh_{config_entry.entry_id}_last_active",
         )
