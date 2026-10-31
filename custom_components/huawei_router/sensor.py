@@ -1704,9 +1704,6 @@ class HuaweiDiagnosticsSensor(HuaweiSensor):
 # ---------------------------
 #   HuaweiHealthSensor
 # ---------------------------
-class HuaweiThrottledHealthSensor(HuaweiThrottledUpdateMixin, HuaweiHealthSensor):
-    """高频变化（CPU/内存等）的健康指标，对外发布按 divisor 降频。"""
-
 class HuaweiHealthSensor(HuaweiSensor):
     """Router health metric backed by a verified endpoint.
 
@@ -1745,6 +1742,12 @@ class HuaweiHealthSensor(HuaweiSensor):
             _LOGGER.debug("Failed to read health metric %s", self.entity_description.key)
             self._attr_native_value = None
         super()._handle_coordinator_update()
+
+# ---------------------------
+#   HuaweiThrottledHealthSensor
+# ---------------------------
+class HuaweiThrottledHealthSensor(HuaweiThrottledUpdateMixin, HuaweiHealthSensor):
+    """高频变化（CPU/内存等）的健康指标，对外发布按 divisor 降频。"""
 
 # ---------------------------
 #   HuaweiEthPortSensor

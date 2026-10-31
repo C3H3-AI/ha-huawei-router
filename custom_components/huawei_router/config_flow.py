@@ -108,7 +108,7 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
     """HuaweiControllerConfigFlow class"""
 
-    VERSION = 7
+    VERSION = 8
 
     def __init__(self):
 
