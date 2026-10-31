@@ -36,7 +36,6 @@ _FUNCTION_UID_NTP: Final = "sensor_ntp_synced"
 
 ENTITY_DOMAIN: Final = "binary_sensor"
 
-
 # ---------------------------
 #   HuaweiBinarySensorEntityDescription
 # ---------------------------
@@ -49,7 +48,6 @@ class HuaweiBinarySensorEntityDescription(BinarySensorEntityDescription):
     device_mac: MAC_ADDR | None = None
     device_name: str | None = None
     name: str | None = None
-
 
 # ---------------------------
 #   HuaweiWanSensorEntityDescription
@@ -64,7 +62,6 @@ class HuaweiWanSensorEntityDescription(HuaweiBinarySensorEntityDescription):
         BinarySensorDeviceClass.CONNECTIVITY
     )
 
-
 def _ntp_is_synced(coordinator: HuaweiDataUpdateCoordinator) -> bool | None:
     """Return whether the router clock is NTP-synchronised.
 
@@ -74,7 +71,6 @@ def _ntp_is_synced(coordinator: HuaweiDataUpdateCoordinator) -> bool | None:
     if status is None:
         return None
     return status.synchronized
-
 
 # ---------------------------
 #   async_setup_entry
@@ -121,7 +117,6 @@ async def async_setup_entry(
 
     async_add_entities(sensors)
 
-
 # ---------------------------
 #   HuaweiBinarySensor
 # ---------------------------
@@ -161,7 +156,6 @@ class HuaweiBinarySensor(
         self._handle_coordinator_update()
         _LOGGER.debug("%s added to hass", self.name)
 
-
 # ---------------------------
 #   HuaweiWanBinarySensor
 # ---------------------------
@@ -196,7 +190,6 @@ class HuaweiWanBinarySensor(HuaweiBinarySensor):
         self._attr_extra_state_attributes["download_rate"] = get_readable_rate(wan_info.download_rate)
 
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiNtpBinarySensor

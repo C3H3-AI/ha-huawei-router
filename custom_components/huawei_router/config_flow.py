@@ -1,16 +1,10 @@
 """Config flow to configure Huawei Mesh Router."""
 
-
-
 import logging
-
-
 
 import voluptuous as vol
 
 from homeassistant.helpers import config_validation as cv
-
-
 
 from homeassistant.config_entries import ConfigFlow, FlowResult, OptionsFlow
 
@@ -35,8 +29,6 @@ from homeassistant.const import (
 )
 
 from homeassistant.core import callback
-
-
 
 from .client.coreapi import AuthenticationError
 
@@ -79,13 +71,7 @@ from .const import (
     OPT_AUTO_ASSOCIATE_DEVICES,
 )
 
-
-
 _LOGGER = logging.getLogger(__name__)
-
-
-
-
 
 # ---------------------------
 
@@ -105,10 +91,6 @@ def configured_instances(hass):
 
     )
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiControllerConfigFlow
@@ -119,17 +101,11 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
     """HuaweiControllerConfigFlow class"""
 
-
-
     VERSION = 7
-
-
 
     def __init__(self):
 
         """Initialize HuaweiControllerConfigFlow."""
-
-
 
     @staticmethod
 
@@ -141,15 +117,11 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return HuaweiControllerOptionsFlowHandler(config_entry)
 
-
-
     async def async_step_import(self, user_input=None) -> FlowResult:
 
         """Occurs when a previously entry setup fails and is re-initiated."""
 
         return await self.async_step_user(user_input)
-
-
 
     async def async_step_user(self, user_input=None) -> FlowResult:
 
@@ -164,8 +136,6 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
             if user_input[CONF_NAME] in configured_instances(self.hass):
 
                 errors["base"] = "name_exists"
-
-
 
             # Test connection
 
@@ -203,8 +173,6 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
                 await api.disconnect()
 
-
-
             # Save instance
 
             if not errors:
@@ -215,11 +183,7 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
                 )
 
-
-
             return self._show_config_form(user_input=user_input, errors=errors)
-
-
 
         return self._show_config_form(
 
@@ -246,8 +210,6 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
 
         )
-
-
 
     # ---------------------------
 
@@ -293,10 +255,6 @@ class HuaweiControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
         )
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiControllerOptionsFlowHandler
@@ -307,8 +265,6 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
 
     """Handle options."""
 
-
-
     def __init__(self, config_entry):
 
         """Initialize options flow."""
@@ -317,15 +273,11 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
 
         self.options = dict(config_entry.options)
 
-
-
     async def async_step_init(self, user_input=None) -> FlowResult:
 
         """Manage the options."""
 
         return await self.async_step_basic_options(user_input)
-
-
 
     async def async_step_basic_options(self, user_input=None) -> FlowResult:
 
@@ -336,8 +288,6 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
             self.options.update(user_input)
 
             return await self.async_step_features_select()
-
-
 
         return self.async_show_form(
 
@@ -371,8 +321,6 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
 
         )
 
-
-
     async def async_step_features_select(self, user_input=None) -> FlowResult:
 
         """Manage the features select options."""
@@ -382,8 +330,6 @@ class HuaweiControllerOptionsFlowHandler(OptionsFlow):
             self.options.update(user_input)
 
             return self.async_create_entry(title="", data=self.options)
-
-
 
         return self.async_show_form(
 

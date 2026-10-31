@@ -17,7 +17,6 @@ from .coreapi import APICALL_ERRCAT_UNAUTHORIZED, ApiCallError, HuaweiCoreApi
 
 _LOGGER = logging.getLogger(__name__)
 
-
 # ---------------------------
 #   HuaweiFeaturesDetector
 # ---------------------------

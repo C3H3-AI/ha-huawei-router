@@ -10,7 +10,6 @@ from .const import DOMAIN
 
 DEVICE_TAG = str
 
-
 # ---------------------------
 #   ZoneInfo
 # ---------------------------
@@ -19,14 +18,12 @@ class ZoneInfo:
     name: str
     entity_id: str
 
-
 # ---------------------------
 #   Select
 # ---------------------------
 class Select(StrEnum):
     WLAN_FILTER_MODE = "wlan_filter_mode_select"
     ROUTER_ZONE = "router_zone_select"
-
 
 # ---------------------------
 #   EmulatedSwitch
@@ -37,7 +34,6 @@ class EmulatedSwitch(StrEnum):
     PORT_MAPPING = "port_mapping"
     TIME_CONTROL = "time_control"
 
-
 # ---------------------------
 #   HuaweiInterfaceType
 # ---------------------------
@@ -46,14 +42,12 @@ class HuaweiInterfaceType(StrEnum):
     INTERFACE_2_4GHZ = "2.4GHz"
     INTERFACE_LAN = "LAN"
 
-
 # ---------------------------
 #   HuaweiWlanFilterMode
 # ---------------------------
 class HuaweiWlanFilterMode(StrEnum):
     BLACKLIST = "Blacklist"
     WHITELIST = "Whitelist"
-
 
 # ---------------------------
 #   UrlFilter
@@ -107,7 +101,6 @@ class UrlFilter:
     @property
     def devices(self) -> Iterable[HuaweiFilterItem]:
         return self._devices
-
 
 # ---------------------------
 #   PortMapping
@@ -164,7 +157,6 @@ class PortMapping:
     @property
     def host_mac(self) -> str:
         return self._host_mac
-
 
 # ---------------------------
 #   ConnectedDevice
@@ -293,7 +285,6 @@ class ConnectedDevice:
         yield "tags", self._tags
         yield "filter_list", self._filter_mode
 
-
 # ---------------------------
 #   EventTypes
 # ---------------------------
@@ -304,12 +295,10 @@ class EventTypes(StrEnum):
     DEVICE_DISCONNECTED = "disconnected"
     DEVICE_CHANGED_ROUTER = "changed_router"
 
-
 HANDLER_TYPE = Callable[[str, dict[str, Any]], None]
 
 EVENT_TYPE_ROUTER: Final = DOMAIN + "_event"
 EVENT_TYPE_DEVICE: Final = DOMAIN + "_device_event"
-
 
 # ---------------------------
 #   HuaweiEvents

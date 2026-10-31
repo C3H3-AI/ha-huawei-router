@@ -132,7 +132,6 @@ _FUNCTION_UID_NTP_STATUS: Final = "sensor_ntp_status"
 
 _ENTITY_DOMAIN: Final = "sensor"
 
-
 # ---------------------------
 #   HuaweiSensorEntityDescription
 # ---------------------------
@@ -147,7 +146,6 @@ class HuaweiSensorEntityDescription(SensorEntityDescription):
     name: str | None = None
     translation_placeholders: dict[str, str] | None = None
 
-
 # ---------------------------
 #   HuaweiUptimeSensorEntityDescription
 # ---------------------------
@@ -159,7 +157,6 @@ class HuaweiUptimeSensorEntityDescription(HuaweiSensorEntityDescription):
     state_class: SensorStateClass | str | None = None
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
     device_class: str | None = SensorDeviceClass.TIMESTAMP
-
 
 # ---------------------------
 #   HuaweiClientsSensorEntityDescription
@@ -173,7 +170,6 @@ class HuaweiClientsSensorEntityDescription(HuaweiSensorEntityDescription):
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
     suggested_display_precision: int | None = 0
 
-
 # ---------------------------
 #   HuaweiDiagnosticsSensorEntityDescription
 # ---------------------------
@@ -182,7 +178,6 @@ class HuaweiDiagnosticsSensorEntityDescription(HuaweiSensorEntityDescription):
     """A class that describes diagnostics sensor entity."""
 
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
-
 
 # ---------------------------
 #   HuaweiHealthSensorEntityDescription
@@ -200,7 +195,6 @@ class HuaweiHealthSensorEntityDescription(HuaweiSensorEntityDescription):
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
     suggested_display_precision: int | None = None
 
-
 # ---------------------------
 #   HuaweiGroupedDevicesSensorEntityDescription
 # ---------------------------
@@ -212,7 +206,6 @@ class HuaweiGroupedDevicesSensorEntityDescription(HuaweiSensorEntityDescription)
     device_name: str | None = None
     entity_category: EntityCategory | None = EntityCategory.DIAGNOSTIC
     suggested_display_precision: int | None = 0
-
 
 # ---------------------------
 #   async_setup_entry
@@ -648,7 +641,6 @@ async def async_setup_entry(
         coordinator, config_entry, integration_options, async_add_entities
     )
 
-
 # ---------------------------
 #   分组 → 设备级传感器 unique_id 映射
 # ---------------------------
@@ -681,7 +673,6 @@ _GROUP_SENSOR_UIDS: Final = {
         _FUNCTION_UID_PARENT_CONTROL,
     ),
 }
-
 
 def _cleanup_for_disabled_groups(
     coordinator: HuaweiDataUpdateCoordinator,
@@ -724,7 +715,6 @@ def _cleanup_for_disabled_groups(
             "设备传感器分组已变更，移除 %s 个不再需要的实体", removed
         )
     return removed
-
 
 # ---------------------------
 #   watch_for_additional_routers
@@ -1428,7 +1418,6 @@ def watch_for_additional_routers(
     config_entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
     coordinator_updated()
 
-
 # ---------------------------
 #   HuaweiSensor
 # ---------------------------
@@ -1465,7 +1454,6 @@ class HuaweiSensor(CoordinatorEntity[HuaweiDataUpdateCoordinator], SensorEntity)
         await super().async_added_to_hass()
         self._handle_coordinator_update()
         _LOGGER.debug("%s added to hass", self.name)
-
 
 # ---------------------------
 #   HuaweiUptimeSensor
@@ -1530,7 +1518,6 @@ class HuaweiUptimeSensor(HuaweiSensor):
             self._attr_extra_state_attributes["software_version"] = router_info.software_version
 
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiConnectedDevicesSensor
@@ -1628,7 +1615,6 @@ class HuaweiConnectedDevicesSensor(HuaweiSensor):
 
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDiagnosticsSensor
 # ---------------------------
@@ -1675,7 +1661,6 @@ class HuaweiDiagnosticsSensor(HuaweiSensor):
 
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiHealthSensor
 # ---------------------------
@@ -1718,7 +1703,6 @@ class HuaweiHealthSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiEthPortSensor
 # ---------------------------
@@ -1754,7 +1738,6 @@ class HuaweiEthPortSensor(HuaweiHealthSensor):
             if port.port_name == self._port_name:
                 return {"port": self._port_name, "link_up": bool(port.status)}
         return {"port": self._port_name, "link_up": False}
-
 
 # ---------------------------
 #   HuaweiGroupedDevicesSensor
@@ -1815,7 +1798,6 @@ class HuaweiGroupedDevicesSensor(HuaweiSensor):
         }
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiWanSensorEntityDescription
 # ---------------------------
@@ -1825,7 +1807,6 @@ class HuaweiWanSensorEntityDescription(SensorEntityDescription):
     function_uid: str | None = None
     device_mac: MAC_ADDR | None = None
     device_name: str | None = None
-
 
 # ---------------------------
 #   HuaweiWanStatusSensor
@@ -1847,7 +1828,6 @@ class HuaweiWanStatusSensor(HuaweiSensor):
         else:
             self._attr_native_value = "未知"
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiRouterInfoSensor
@@ -1930,7 +1910,6 @@ class HuaweiRouterInfoSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiWanIpSensor
 # ---------------------------
@@ -1951,7 +1930,6 @@ class HuaweiWanIpSensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceIpSensor
@@ -1985,7 +1963,6 @@ class HuaweiDeviceIpSensor(HuaweiSensor):
             # 主路由器 - 从配置中获取主路由器的IP地址
             self._attr_native_value = self.coordinator.config_entry.data.get("host")
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceMacSensor
@@ -2045,7 +2022,6 @@ class HuaweiDeviceMacSensor(HuaweiSensor):
                     _LOGGER.debug("HuaweiDeviceMacSensor: Found main router MAC from ARP: %s", self._attr_native_value)
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceConnectionTypeSensor
 # ---------------------------
@@ -2076,7 +2052,6 @@ class HuaweiDeviceConnectionTypeSensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceSignalSensor
@@ -2111,7 +2086,6 @@ class HuaweiDeviceSignalSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceUploadSpeedSensor
 # ---------------------------
@@ -2144,7 +2118,6 @@ class HuaweiDeviceUploadSpeedSensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceDownloadSpeedSensor
@@ -2179,7 +2152,6 @@ class HuaweiDeviceDownloadSpeedSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceConnectionRateSensor - WiFi连接速率(Mbps)
 # ---------------------------
@@ -2208,7 +2180,6 @@ class HuaweiDeviceConnectionRateSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceFrequencySensor - WiFi频段
 # ---------------------------
@@ -2235,7 +2206,6 @@ class HuaweiDeviceFrequencySensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceBrandsSensor - 设备厂商
@@ -2264,7 +2234,6 @@ class HuaweiDeviceBrandsSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceTypeSensor - 设备类型
 # ---------------------------
@@ -2291,7 +2260,6 @@ class HuaweiDeviceTypeSensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceTxDataSensor - 发送流量
@@ -2324,7 +2292,6 @@ class HuaweiDeviceTxDataSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceRxDataSensor - 接收流量
 # ---------------------------
@@ -2356,7 +2323,6 @@ class HuaweiDeviceRxDataSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiDeviceParentControlSensor - 家长控制
 # ---------------------------
@@ -2383,7 +2349,6 @@ class HuaweiDeviceParentControlSensor(HuaweiSensor):
         else:
             self._attr_native_value = None
         super()._handle_coordinator_update()
-
 
 # ---------------------------
 #   HuaweiDeviceConnectedViaSensor - 连接至哪个路由器
@@ -2415,7 +2380,6 @@ class HuaweiDeviceConnectedViaSensor(HuaweiSensor):
             self._attr_native_value = None
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiWanIpv6Sensor
 # ---------------------------
@@ -2423,7 +2387,6 @@ class HuaweiWanIpv6Sensor(HuaweiSensor):
     entity_description: HuaweiWanSensorEntityDescription
     _attr_native_value: str | None = None
     _attr_extra_state_attributes: dict
-
 
     def __init__(self, coordinator, description):
         super().__init__(coordinator, description)
@@ -2451,7 +2414,6 @@ class HuaweiWanIpv6Sensor(HuaweiSensor):
             self._attr_extra_state_attributes.pop("prefix_length", None)
         super()._handle_coordinator_update()
 
-
 # ---------------------------
 #   HuaweiWanSpeedSensor
 # ---------------------------
@@ -2475,5 +2437,4 @@ class HuaweiWanSpeedSensor(HuaweiSensor):
         else:
             self._attr_native_value = 0.0
         super()._handle_coordinator_update()
-
 

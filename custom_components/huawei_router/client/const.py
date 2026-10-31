@@ -1,16 +1,10 @@
 from typing import Final
 
-
-
 WIFI_SECURITY_OPEN: Final = "none"
 
 WIFI_SECURITY_ENCRYPTED: Final = "tkip"
 
-
-
 CONNECTED_VIA_ID_PRIMARY: Final = "primary"
-
-
 
 URL_DEVICE_INFO: Final = "api/system/deviceinfo"
 

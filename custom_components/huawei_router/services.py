@@ -1,7 +1,5 @@
 """Support for services."""
 
-
-
 from dataclasses import dataclass
 
 from enum import StrEnum
@@ -10,11 +8,7 @@ import logging
 
 from typing import Final
 
-
-
 import voluptuous as vol
-
-
 
 from homeassistant.config_entries import ConfigEntry
 
@@ -25,8 +19,6 @@ from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 import homeassistant.helpers.config_validation as cv
 
 from homeassistant.helpers.service import verify_domain_control
-
-
 
 from .client.classes import (
     MAC_ADDR,
@@ -79,15 +71,9 @@ from .const import DATA_KEY_COORDINATOR, DATA_KEY_SERVICES, DOMAIN
 
 from .update_coordinator import HuaweiDataUpdateCoordinator
 
-
-
 _LOGGER = logging.getLogger(__name__)
 
-
-
 _FIELD_MAC_ADDRESS: Final = "mac_address"
-
-
 
 _FIELD_SERIAL_NUMBER: Final = "serial_number"
 
@@ -101,11 +87,7 @@ _FIELD_SECURITY: Final = "security"
 
 _FIELD_PASSWORD: Final = "password"
 
-
-
 _CV_MAC_ADDR: Final = cv.matches_regex("^([A-Fa-f0-9]{2}\\:){5}[A-Fa-f0-9]{2}$")
-
-
 
 _WIFI_DURATION_MAP: dict[str, HuaweiGuestNetworkDuration] = {
 
@@ -117,8 +99,6 @@ _WIFI_DURATION_MAP: dict[str, HuaweiGuestNetworkDuration] = {
 
 }
 
-
-
 _WIFI_SECURITY_MAP: dict[str, bool] = {
 
     "encrypted": True,
@@ -127,17 +107,9 @@ _WIFI_SECURITY_MAP: dict[str, bool] = {
 
 }
 
-
-
-
-
 # ---------------------------
 
 # ---------------------------
-
-
-
-
 
 # ---------------------------
 #   ServiceName
@@ -263,10 +235,6 @@ class ServiceName(StrEnum):
     CONFIG_EXPORT = "config_export"
     CONFIG_IMPORT = "config_import"
 
-
-
-
-
 @dataclass
 
 class ServiceDescription:
@@ -274,10 +242,6 @@ class ServiceDescription:
     name: str
 
     schema: vol.Schema
-
-
-
-
 
 SERVICES = [
 
@@ -748,10 +712,6 @@ SERVICES = [
     ),
 ]
 
-
-
-
-
 # ---------------------------
 
 #   _find_coordinator
@@ -789,10 +749,6 @@ def _find_coordinator(
                 )
 
                 return coordinator
-
-
-
-
 
 # ---------------------------
 
@@ -834,10 +790,6 @@ def _find_coordinator_serial(
 
             return coordinator
 
-
-
-
-
 # ---------------------------
 
 #   _async_add_to_whitelist
@@ -859,8 +811,6 @@ async def _async_add_to_whitelist(hass: HomeAssistant, service: ServiceCall):
             f"Can not find coordinator for mac address '{device_mac}'"
 
         )
-
-
 
     _LOGGER.debug(
 
@@ -886,15 +836,9 @@ async def _async_add_to_whitelist(hass: HomeAssistant, service: ServiceCall):
 
         raise HomeAssistantError(str(ex))
 
-
-
     if not success:
 
         raise HomeAssistantError("Can not add item to whitelist")
-
-
-
-
 
 # ---------------------------
 
@@ -917,8 +861,6 @@ async def _async_add_to_blacklist(hass: HomeAssistant, service: ServiceCall):
             f"Can not find coordinator for mac address '{device_mac}'"
 
         )
-
-
 
     _LOGGER.debug(
 
@@ -944,15 +886,9 @@ async def _async_add_to_blacklist(hass: HomeAssistant, service: ServiceCall):
 
         raise HomeAssistantError(str(ex))
 
-
-
     if not success:
 
         raise HomeAssistantError("Can not add item to blacklist")
-
-
-
-
 
 # ---------------------------
 
@@ -976,8 +912,6 @@ async def _async_remove_from_whitelist(hass: HomeAssistant, service: ServiceCall
 
         )
 
-
-
     _LOGGER.debug(
 
         "Service '%s' called for device mac '%s' with %s",
@@ -989,8 +923,6 @@ async def _async_remove_from_whitelist(hass: HomeAssistant, service: ServiceCall
         coordinator.name,
 
     )
-
-
 
     try:
 
@@ -1004,15 +936,9 @@ async def _async_remove_from_whitelist(hass: HomeAssistant, service: ServiceCall
 
         raise HomeAssistantError(str(ex))
 
-
-
     if not success:
 
         raise HomeAssistantError("Can not remove item from whitelist")
-
-
-
-
 
 # ---------------------------
 
@@ -1035,8 +961,6 @@ async def _async_remove_from_blacklist(hass: HomeAssistant, service: ServiceCall
             f"Can not find coordinator for mac address '{device_mac}'"
 
         )
-
-
 
     _LOGGER.debug(
 
@@ -1062,15 +986,9 @@ async def _async_remove_from_blacklist(hass: HomeAssistant, service: ServiceCall
 
         raise HomeAssistantError(str(ex))
 
-
-
     if not success:
 
         raise HomeAssistantError("Can not remove item from blacklist")
-
-
-
-
 
 # ---------------------------
 
@@ -1084,8 +1002,6 @@ async def _async_setup_guest_network(hass: HomeAssistant, service: ServiceCall):
 
     serial_number = service.data[_FIELD_SERIAL_NUMBER]
 
-
-
     coordinator = _find_coordinator_serial(hass, serial_number)
 
     if not coordinator:
@@ -1095,8 +1011,6 @@ async def _async_setup_guest_network(hass: HomeAssistant, service: ServiceCall):
             f"Can not find coordinator with primary router's serial number '{serial_number}'"
 
         )
-
-
 
     _LOGGER.debug(
 
@@ -1109,8 +1023,6 @@ async def _async_setup_guest_network(hass: HomeAssistant, service: ServiceCall):
         coordinator.name,
 
     )
-
-
 
     try:
 
@@ -1128,8 +1040,6 @@ async def _async_setup_guest_network(hass: HomeAssistant, service: ServiceCall):
 
         password: str | None = service.data[_FIELD_PASSWORD]
 
-
-
         await coordinator.primary_router_api.set_guest_network_state(
 
             enabled, ssid, duration, secured, password
@@ -1138,7 +1048,6 @@ async def _async_setup_guest_network(hass: HomeAssistant, service: ServiceCall):
 
     except Exception as ex:
         raise HomeAssistantError(str(ex))
-
 
 # ---------------------------
 #   _async_port_mapping_add
@@ -1193,7 +1102,6 @@ async def _async_port_mapping_add(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error adding port mapping: {ex}")
 
-
 # ---------------------------
 #   _async_port_mapping_remove
 # ---------------------------
@@ -1230,7 +1138,6 @@ async def _async_port_mapping_remove(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error removing port mapping: {ex}")
 
-
 # ---------------------------
 #   _async_port_mapping_list
 # ---------------------------
@@ -1264,7 +1171,6 @@ async def _async_port_mapping_list(hass: HomeAssistant, service: ServiceCall):
     _LOGGER.info("Port mappings listed: %d mappings found", len(mappings))
     return mappings
 
-
 # ---------------------------
 #   _async_port_mapping_state
 # ---------------------------
@@ -1297,7 +1203,6 @@ async def _async_port_mapping_state(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error setting port mapping state: {ex}")
 
-
 # ---------------------------
 #   _async_port_trigger_list
 # ---------------------------
@@ -1329,7 +1234,6 @@ async def _async_port_trigger_list(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error listing port triggers: {ex}")
 
-
 # ---------------------------
 #   _async_port_trigger_state
 # ---------------------------
@@ -1360,7 +1264,6 @@ async def _async_port_trigger_state(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("Port trigger %s -> enabled=%s", trigger_id, enabled)
     except Exception as ex:
         raise HomeAssistantError(f"Error toggling port trigger: {ex}")
-
 
 # ---------------------------
 #   _async_port_trigger_add
@@ -1394,7 +1297,6 @@ async def _async_port_trigger_add(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error adding port trigger: {ex}")
 
-
 # ---------------------------
 #   _async_port_trigger_remove
 # ---------------------------
@@ -1421,7 +1323,6 @@ async def _async_port_trigger_remove(hass: HomeAssistant, service: ServiceCall):
         raise
     except Exception as ex:
         raise HomeAssistantError(f"Error removing port trigger: {ex}")
-
 
 # ---------------------------
 #   _async_upnp_port_mapping_list
@@ -1457,7 +1358,6 @@ async def _async_upnp_port_mapping_list(hass: HomeAssistant, service: ServiceCal
     except Exception as ex:
         raise HomeAssistantError(f"Error listing UPnP port mappings: {ex}")
 
-
 # ---------------------------
 #   _async_wan_reconnect
 # ---------------------------
@@ -1487,7 +1387,6 @@ async def _async_wan_reconnect(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"WAN reconnect failed: {ex}") from ex
 
-
 # ---------------------------
 #   _find_any_coordinator
 # ---------------------------
@@ -1500,7 +1399,6 @@ def _find_any_coordinator(hass: HomeAssistant) -> HuaweiDataUpdateCoordinator | 
         if coordinator and isinstance(coordinator, HuaweiDataUpdateCoordinator):
             return coordinator
     return None
-
 
 # ---------------------------
 #   _async_dhcp_static_lease_list
@@ -1525,7 +1423,6 @@ async def _async_dhcp_static_lease_list(hass: HomeAssistant, service: ServiceCal
     except Exception as ex:
         raise HomeAssistantError(f"Error listing DHCP static leases: {ex}")
 
-
 # ---------------------------
 #   _async_dhcp_static_lease_add
 # ---------------------------
@@ -1549,7 +1446,6 @@ async def _async_dhcp_static_lease_add(hass: HomeAssistant, service: ServiceCall
     except Exception as ex:
         raise HomeAssistantError(f"Error adding DHCP static lease: {ex}")
 
-
 # ---------------------------
 #   _async_dhcp_static_lease_remove
 # ---------------------------
@@ -1569,7 +1465,6 @@ async def _async_dhcp_static_lease_remove(hass: HomeAssistant, service: ServiceC
     except Exception as ex:
         raise HomeAssistantError(f"Error removing DHCP static lease: {ex}")
 
-
 # ---------------------------
 #   _async_dhcp_static_lease_state
 # ---------------------------
@@ -1586,7 +1481,6 @@ async def _async_dhcp_static_lease_state(hass: HomeAssistant, service: ServiceCa
     except Exception as ex:
         raise HomeAssistantError(f"Error toggling DHCP static lease: {ex}")
 
-
 # ---------------------------
 #   _async_upnp_set_enabled
 # ---------------------------
@@ -1601,7 +1495,6 @@ async def _async_upnp_set_enabled(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("UPnP set to enabled=%s", enabled)
     except Exception as ex:
         raise HomeAssistantError(f"Error setting UPnP state: {ex}")
-
 
 # ---------------------------
 #   _async_ipv6_set_enabled
@@ -1618,7 +1511,6 @@ async def _async_ipv6_set_enabled(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error setting IPv6 state: {ex}")
 
-
 # ---------------------------
 #   _async_band_steering_set_enabled
 # ---------------------------
@@ -1633,7 +1525,6 @@ async def _async_band_steering_set_enabled(hass: HomeAssistant, service: Service
         _LOGGER.info("Band steering set to enabled=%s", enabled)
     except Exception as ex:
         raise HomeAssistantError(f"Error setting band steering: {ex}")
-
 
 # ---------------------------
 #   _async_smart_connect_set_enabled
@@ -1650,7 +1541,6 @@ async def _async_smart_connect_set_enabled(hass: HomeAssistant, service: Service
     except Exception as ex:
         raise HomeAssistantError(f"Error setting smart connect: {ex}")
 
-
 # ---------------------------
 #   _async_firewall_set_level
 # ---------------------------
@@ -1665,7 +1555,6 @@ async def _async_firewall_set_level(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("Firewall level set to %s", level)
     except Exception as ex:
         raise HomeAssistantError(f"Error setting firewall level: {ex}")
-
 
 # ---------------------------
 #   _async_dmz_set
@@ -1683,7 +1572,6 @@ async def _async_dmz_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error setting DMZ: {ex}")
 
-
 # ---------------------------
 #   _async_scheduled_reboot_set
 # ---------------------------
@@ -1700,7 +1588,6 @@ async def _async_scheduled_reboot_set(hass: HomeAssistant, service: ServiceCall)
     except Exception as ex:
         raise HomeAssistantError(f"Error setting scheduled reboot: {ex}")
 
-
 # ---------------------------
 #   _async_ddns_status
 # ---------------------------
@@ -1714,7 +1601,6 @@ async def _async_ddns_status(hass: HomeAssistant, service: ServiceCall):
         return await coordinator.primary_router_api.get_ddns_status()
     except Exception as ex:
         raise HomeAssistantError(f"Error getting DDNS status: {ex}")
-
 
 # ---------------------------
 #   _async_ddns_set_enabled
@@ -1731,7 +1617,6 @@ async def _async_ddns_set_enabled(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error setting DDNS state: {ex}")
 
-
 # ---------------------------
 #   _async_device_set_name
 # ---------------------------
@@ -1747,7 +1632,6 @@ async def _async_device_set_name(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("Device %s renamed to %s", mac_address, name)
     except Exception as ex:
         raise HomeAssistantError(f"Error renaming device: {ex}")
-
 
 # ---------------------------
 #   _async_device_set_rate_limit
@@ -1778,7 +1662,6 @@ async def _async_device_set_rate_limit(hass: HomeAssistant, service: ServiceCall
     except Exception as ex:
         raise HomeAssistantError(f"Error setting device rate limit: {ex}")
 
-
 # ---------------------------
 #   _async_device_remove
 # ---------------------------
@@ -1793,7 +1676,6 @@ async def _async_device_remove(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("Device removed: %s", mac_address)
     except Exception as ex:
         raise HomeAssistantError(f"Error removing device: {ex}")
-
 
 # ---------------------------
 #   Web UI 剩余端点：通用读写助手
@@ -1813,7 +1695,6 @@ async def _async_read_config(
         raise HomeAssistantError(str(ex)) from ex
     except Exception as ex:
         raise HomeAssistantError(f"{label}: {ex}")
-
 
 async def _async_update_config(
     hass: HomeAssistant, service: ServiceCall, path: str, updates: dict, label: str
@@ -1836,7 +1717,6 @@ async def _async_update_config(
     except Exception as ex:
         raise HomeAssistantError(f"{label}: {ex}")
 
-
 # ---------------------------
 #   _async_api_get / _async_api_set（通用 API 桥接）
 # ---------------------------
@@ -1852,7 +1732,6 @@ async def _async_api_get(hass: HomeAssistant, service: ServiceCall):
         )
     except Exception as ex:
         raise HomeAssistantError(f"Error reading endpoint {endpoint}: {ex}")
-
 
 async def _async_api_set(hass: HomeAssistant, service: ServiceCall):
     """对白名单端点执行原始 POST（可选 action）。"""
@@ -1870,13 +1749,11 @@ async def _async_api_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"Error writing endpoint {endpoint}: {ex}")
 
-
 # ---------------------------
 #   WiFi / SSID
 # ---------------------------
 async def _async_wifi_radio_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_WLAN_RADIO, "获取射频配置失败")
-
 
 async def _async_wifi_radio_set_enabled(hass: HomeAssistant, service: ServiceCall):
     frequency = service.data["frequency"]
@@ -1890,10 +1767,8 @@ async def _async_wifi_radio_set_enabled(hass: HomeAssistant, service: ServiceCal
     except Exception as ex:
         raise HomeAssistantError(f"设置射频开关失败: {ex}")
 
-
 async def _async_wlan_wps_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_WLAN_WPS, "获取 WPS 配置失败")
-
 
 async def _async_wps_set_enabled(hass: HomeAssistant, service: ServiceCall):
     enabled = service.data["enabled"]
@@ -1908,16 +1783,13 @@ async def _async_wps_set_enabled(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"设置 WPS 开关失败: {ex}")
 
-
 async def _async_multi_ssid_list(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_MULTI_SSID, "获取多 SSID 列表失败")
-
 
 async def _async_wifi_timing_accelerate_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(
         hass, service, URL_WLAN_TIMING_ACCELERATE, "获取 WiFi 加速配置失败"
     )
-
 
 async def _async_wifi_timing_accelerate_set(hass: HomeAssistant, service: ServiceCall):
     updates: dict = {"Enable": service.data["enabled"]}
@@ -1926,19 +1798,16 @@ async def _async_wifi_timing_accelerate_set(hass: HomeAssistant, service: Servic
         hass, service, URL_WLAN_TIMING_ACCELERATE, updates, "设置 WiFi 加速失败"
     )
 
-
 async def _async_wlan_wifi_sync_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(
         hass, service, URL_WLAN_WIFI_SYNC, "获取 WiFi 同步配置失败"
     )
-
 
 # ---------------------------
 #   LAN / DHCP
 # ---------------------------
 async def _async_lan_config_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_LAN, "获取 LAN 配置失败")
-
 
 async def _async_lan_config_set(hass: HomeAssistant, service: ServiceCall):
     updates: dict = {}
@@ -1950,14 +1819,11 @@ async def _async_lan_config_set(hass: HomeAssistant, service: ServiceCall):
         updates["EnableDhcp"] = service.data["dhcp_enabled"]
     await _async_update_config(hass, service, URL_LAN, updates, "设置 LAN 配置失败")
 
-
 async def _async_lan_all_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_LAN_ALL, "获取 LAN 完整配置失败")
 
-
 async def _async_dhcp_server_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_LAN_SERVER, "获取 DHCP 服务配置失败")
-
 
 async def _async_dhcp_server_set(hass: HomeAssistant, service: ServiceCall):
     updates: dict = {}
@@ -1973,12 +1839,10 @@ async def _async_dhcp_server_set(hass: HomeAssistant, service: ServiceCall):
         hass, service, URL_LAN_SERVER, updates, "设置 DHCP 服务失败"
     )
 
-
 async def _async_device_type_list(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(
         hass, service, URL_LAN_DEVICE_TYPE, "获取设备类型列表失败"
     )
-
 
 # ---------------------------
 #   WAN / IPv6 / 隧道 / VPN / IPTV
@@ -1988,74 +1852,59 @@ async def _async_wan_learn_config_get(hass: HomeAssistant, service: ServiceCall)
         hass, service, URL_WAN_LEARN_CONFIG, "获取 WAN 学习配置失败"
     )
 
-
 async def _async_wan_diagnose_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(
         hass, service, URL_WAN_DIAGNOSE, "获取 WAN 诊断信息失败"
     )
 
-
 async def _async_ipv6_wan_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_IPV6_WAN, "获取 IPv6 WAN 配置失败")
-
 
 async def _async_ipv6_wan_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_IPV6_WAN, service.data["data"], "设置 IPv6 WAN 配置失败"
     )
 
-
 async def _async_ipv6_lan_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_IPV6_LAN, "获取 IPv6 LAN 配置失败")
-
 
 async def _async_ipv6_lan_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_IPV6_LAN, service.data["data"], "设置 IPv6 LAN 配置失败"
     )
 
-
 async def _async_alg_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_ALG, "获取 ALG 配置失败")
-
 
 async def _async_alg_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(hass, service, URL_ALG, service.data["data"], "设置 ALG 失败")
 
-
 async def _async_tunnel_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_TUNNEL, "获取隧道配置失败")
-
 
 async def _async_tunnel_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_TUNNEL, service.data["data"], "设置隧道配置失败"
     )
 
-
 async def _async_swan_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_SWAN, "获取 SWAN 配置失败")
 
-
 async def _async_smart_vpn_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_SMART_VPN, "获取 Smart VPN 配置失败")
-
 
 async def _async_smart_vpn_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_SMART_VPN, service.data["data"], "设置 Smart VPN 配置失败"
     )
 
-
 async def _async_iptv_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_IPTV, "获取 IPTV 配置失败")
-
 
 async def _async_iptv_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_IPTV, service.data["data"], "设置 IPTV 配置失败"
     )
-
 
 # ---------------------------
 #   安全 / 接入 / 防蹭网
@@ -2063,16 +1912,13 @@ async def _async_iptv_set(hass: HomeAssistant, service: ServiceCall):
 async def _async_mac_filter_list(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_MAC_FILTER, "获取 MAC 过滤列表失败")
 
-
 async def _async_access_auth_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_ACCESS_AUTH, "获取接入认证配置失败")
-
 
 async def _async_access_auth_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_ACCESS_AUTH, service.data["data"], "设置接入认证失败"
     )
-
 
 async def _async_homesec_get(hass: HomeAssistant, service: ServiceCall):
     """合并返回家庭安全（防暴力破解 + 防蹭网）配置。"""
@@ -2083,7 +1929,6 @@ async def _async_homesec_get(hass: HomeAssistant, service: ServiceCall):
         return await coordinator.primary_router_api.get_homesec()
     except Exception as ex:
         raise HomeAssistantError(f"获取家庭安全配置失败: {ex}")
-
 
 async def _async_homesec_set(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
@@ -2098,12 +1943,10 @@ async def _async_homesec_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"设置家庭安全失败: {ex}")
 
-
 async def _async_xlink_lock_net_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(
         hass, service, URL_XLINK_LOCK_NET, "获取防蹭网配置失败"
     )
-
 
 # ---------------------------
 #   访客网络补充
@@ -2112,7 +1955,6 @@ async def _async_guest_network_limit_rate_get(hass: HomeAssistant, service: Serv
     return await _async_read_config(
         hass, service, URL_GUEST_NETWORK_LIMIT_RATE, "获取访客网络限速配置失败"
     )
-
 
 async def _async_guest_network_limit_rate_set(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
@@ -2128,7 +1970,6 @@ async def _async_guest_network_limit_rate_set(hass: HomeAssistant, service: Serv
     except Exception as ex:
         raise HomeAssistantError(f"设置访客网络限速失败: {ex}")
 
-
 async def _async_guest_network_rest_time_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass,
@@ -2138,33 +1979,26 @@ async def _async_guest_network_rest_time_set(hass: HomeAssistant, service: Servi
         "设置访客网络休息时间失败",
     )
 
-
 # ---------------------------
 #   系统 / 时间 / 升级
 # ---------------------------
 async def _async_ntp_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_NTP, "获取 NTP 配置失败")
 
-
 async def _async_ntp_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(hass, service, URL_NTP, service.data["data"], "设置 NTP 失败")
-
 
 async def _async_process_status_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_PROCESS_STATUS, "获取进程状态失败")
 
-
 async def _async_online_state_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_ONLINE_STATE, "获取在线状态失败")
-
 
 async def _async_eth_negotiation_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_ETH_NEGOTIATION, "获取网口协商配置失败")
 
-
 async def _async_auto_upgrade_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_AUTO_UPGRADE, "获取自动升级配置失败")
-
 
 async def _async_auto_upgrade_set(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
@@ -2180,7 +2014,6 @@ async def _async_auto_upgrade_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"设置自动升级失败: {ex}")
 
-
 async def _async_auto_upgrade_check(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
@@ -2190,14 +2023,11 @@ async def _async_auto_upgrade_check(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"触发在线升级检查失败: {ex}")
 
-
 async def _async_password_rule_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_PASSWORD_RULE, "获取密码规则失败")
 
-
 async def _async_user_account_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_USER_ACCOUNT, "获取用户账号信息失败")
-
 
 async def _async_system_language_set(hass: HomeAssistant, service: ServiceCall):
     language = service.data["language"]
@@ -2209,7 +2039,6 @@ async def _async_system_language_set(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("系统语言已设置为 %s", language)
     except Exception as ex:
         raise HomeAssistantError(f"设置系统语言失败: {ex}")
-
 
 # ---------------------------
 #   诊断 / 中继 / 存储 / 互联
@@ -2223,18 +2052,14 @@ async def _async_wifi_scan(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"触发 WiFi 扫描失败: {ex}")
 
-
 async def _async_wifi_scan_result(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_WIFI_SCAN_RESULT, "获取 WiFi 扫描结果失败")
-
 
 async def _async_repeater_state_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_REPEATER_STATE, "获取中继状态失败")
 
-
 async def _async_repeater_diag_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_REPEATER_DIAG, "获取中继诊断失败")
-
 
 async def _async_repeater_dial_set(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
@@ -2246,20 +2071,16 @@ async def _async_repeater_dial_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"中继拨号失败: {ex}")
 
-
 async def _async_netdisk_info_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_NETDISK_INFO, "获取网络存储信息失败")
 
-
 async def _async_netdisk_code_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_NETDISK_CODE, "获取网络存储码失败")
-
 
 async def _async_netdisk_code_set(hass: HomeAssistant, service: ServiceCall):
     await _async_update_config(
         hass, service, URL_NETDISK_CODE, service.data["data"], "设置网络存储码失败"
     )
-
 
 async def _async_hilink_status_get(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
@@ -2269,7 +2090,6 @@ async def _async_hilink_status_get(hass: HomeAssistant, service: ServiceCall):
         return await coordinator.primary_router_api.get_hilink_status()
     except Exception as ex:
         raise HomeAssistantError(f"获取 HiLink 状态失败: {ex}")
-
 
 async def _async_slave_setup_set(hass: HomeAssistant, service: ServiceCall):
     allow = service.data["allow"]
@@ -2282,7 +2102,6 @@ async def _async_slave_setup_set(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"设置 HiLink 组网失败: {ex}")
 
-
 async def _async_multi_host_info_get(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
@@ -2292,10 +2111,8 @@ async def _async_multi_host_info_get(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"获取多主机信息失败: {ex}")
 
-
 async def _async_system_mode_get(hass: HomeAssistant, service: ServiceCall):
     return await _async_read_config(hass, service, URL_SYSTEM_MODE, "获取系统模式失败")
-
 
 # ---------------------------
 #   WiFi 射频详情 / LAN host / 诊断日志 / WPS 配对（最后一缺口）
@@ -2316,7 +2133,6 @@ async def _async_wifi_diag_get(hass: HomeAssistant, service: ServiceCall):
         raise HomeAssistantError(f"获取 WiFi 射频详情失败: {ex}")
     return result
 
-
 async def _async_lan_host_get(hass: HomeAssistant, service: ServiceCall):
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
@@ -2325,7 +2141,6 @@ async def _async_lan_host_get(hass: HomeAssistant, service: ServiceCall):
         return await coordinator.primary_router_api.get_lan_host()
     except Exception as ex:
         raise HomeAssistantError(f"获取 LAN host 配置失败: {ex}")
-
 
 async def _async_diagnostics_collect(hass: HomeAssistant, service: ServiceCall):
     """Start diagnostics collection (async; poll diagnostics_status)."""
@@ -2338,7 +2153,6 @@ async def _async_diagnostics_collect(hass: HomeAssistant, service: ServiceCall):
         _LOGGER.info("Diagnostics collection started (mac=%s)", mac or "primary")
     except Exception as ex:
         raise HomeAssistantError(f"触发诊断收集失败: {ex}")
-
 
 async def _async_diagnostics_status(hass: HomeAssistant, service: ServiceCall):
     """Return current collection state; result_ready=True when downloadable."""
@@ -2356,7 +2170,6 @@ async def _async_diagnostics_status(hass: HomeAssistant, service: ServiceCall):
         "result_ready": state.get("ResultState") is True
         or state.get("ResultState") == 1,
     }
-
 
 async def _async_diagnostics_devlist(hass: HomeAssistant, service: ServiceCall):
     """List devices that can be diagnosed (main router + satellite routers).
@@ -2383,20 +2196,22 @@ async def _async_diagnostics_devlist(hass: HomeAssistant, service: ServiceCall):
         ]
     }
 
-
 async def _async_diagnostics_download(hass: HomeAssistant, service: ServiceCall):
-    """Download the diagnostics package into the HA config directory."""
-    path = service.data["path"]
+    """Download the diagnostics package into the HA config directory.
+
+    path 只取文件名，写入位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
-        return await coordinator.primary_router_api.diagnostics_download(path)
+        return await coordinator.primary_router_api.diagnostics_download(
+            service.data["path"], allowed_dir=hass.config.path("www")
+        )
     except HomeAssistantError:
         raise
     except Exception as ex:
         raise HomeAssistantError(f"下载诊断日志失败: {ex}")
-
 
 async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
     """Trigger a WPS pairing session (pbc / client-pin / ap-pin).
@@ -2420,35 +2235,40 @@ async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
     except Exception as ex:
         raise HomeAssistantError(f"触发 WPS 配对失败: {ex}")
 
-
 async def _async_config_export(hass: HomeAssistant, service: ServiceCall):
-    """Export the router configuration backup to a local file (真机验证 ✅)."""
-    path = service.data["path"]
+    """Export the router configuration backup to a local file (真机验证 ✅).
+
+    path 只取文件名，写入位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
-        return await coordinator.primary_router_api.config_export(path)
+        return await coordinator.primary_router_api.config_export(
+            service.data["path"], allowed_dir=hass.config.path("www")
+        )
     except Exception as ex:
         raise HomeAssistantError(f"导出配置失败: {ex}")
 
-
 async def _async_config_import(hass: HomeAssistant, service: ServiceCall):
-    """⚠️ 破坏性：上传配置备份，路由器覆盖全部设置并重启。"""
-    path = service.data["path"]
+    """⚠️ 破坏性：上传配置备份，路由器覆盖全部设置并重启。
+
+    path 只取文件名，读取位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     wait_restart = service.data.get("wait_restart", False)
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
         return await coordinator.primary_router_api.config_import(
-            path, wait_restart=wait_restart
+            service.data["path"],
+            wait_restart=wait_restart,
+            allowed_dir=hass.config.path("www"),
         )
     except HomeAssistantError:
         raise
     except Exception as ex:
         raise HomeAssistantError(f"导入配置失败: {ex}")
-
 
 # ---------------------------
 #   _change_instances_count
@@ -2462,10 +2282,6 @@ def _change_instances_count(hass: HomeAssistant, delta: int) -> int:
     hass.data[DOMAIN][DATA_KEY_SERVICES] = result
 
     return result
-
-
-
-
 
 async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
 
@@ -2485,8 +2301,6 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         return
 
-
-
     try:
         _service_decorator = verify_domain_control(DOMAIN)
     except TypeError:  # HA < 2026.x requires hass
@@ -2498,31 +2312,21 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         service_name = service.service
 
-
-
         if service_name == ServiceName.ADD_TO_WHITELIST:
 
             await _async_add_to_whitelist(hass, service)
-
-
 
         elif service_name == ServiceName.ADD_TO_BLACKLIST:
 
             await _async_add_to_blacklist(hass, service)
 
-
-
         elif service_name == ServiceName.REMOVE_FROM_WHITELIST:
 
             await _async_remove_from_whitelist(hass, service)
 
-
-
         elif service_name == ServiceName.REMOVE_FROM_BLACKLIST:
 
             await _async_remove_from_blacklist(hass, service)
-
-
 
         elif service_name == ServiceName.GUEST_NETWORK_SETUP:
             await _async_setup_guest_network(hass, service)
@@ -2825,8 +2629,6 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
             raise ServiceNotFound(DOMAIN, service_name)
 
-
-
     for item in SERVICES:
 
         hass.services.async_register(
@@ -2841,10 +2643,6 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
         )
 
-
-
-
-
 async def async_unload_services(hass: HomeAssistant, config_entry: ConfigEntry):
 
     """Unload services."""
@@ -2856,8 +2654,6 @@ async def async_unload_services(hass: HomeAssistant, config_entry: ConfigEntry):
         _LOGGER.debug("%s active instances remaining, skipping", active_instances)
 
         return
-
-
 
     hass.data[DOMAIN].pop(DATA_KEY_SERVICES)
 

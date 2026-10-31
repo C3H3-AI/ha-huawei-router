@@ -33,7 +33,6 @@ AUTH_FAILURE_CREDENTIALS: Final = "auth_invalid_credentials"
 AUTH_FAILURE_CSRF: Final = "auth_invalid_csrf"
 AUTH_FAILURE_TOO_MANY_USERS: Final = "auth_too_many_users"
 
-
 # ---------------------------
 #   AuthenticationError
 # ---------------------------
@@ -56,7 +55,6 @@ class AuthenticationError(Exception):
     def __repr__(self) -> str:
         """Return repr(self)."""
         return self.__str__()
-
 
 # ---------------------------
 #   ApiCallError
@@ -88,7 +86,6 @@ class ApiCallError(Exception):
     def __repr__(self) -> str:
         """Return repr(self)."""
         return self.__str__()
-
 
 # ---------------------------
 #   handle_auth_exception
@@ -127,7 +124,6 @@ def handle_auth_exception(func):
 
     return wrapper
 
-
 # ---------------------------
 #   retry_on_csrf_error
 # ---------------------------
@@ -147,7 +143,6 @@ def retry_on_csrf_error(func):
 
     return wrapper
 
-
 # ---------------------------
 #   lock_external_call
 # ---------------------------
@@ -159,7 +154,6 @@ def lock_external_call(func):
             return await func(*args, **kwargs)
 
     return wrapper
-
 
 # ---------------------------
 #   lock_auth_call
@@ -173,7 +167,6 @@ def lock_auth_call(func):
 
     return wrapper
 
-
 # ---------------------------
 #   _get_response_text
 # ---------------------------
@@ -182,7 +175,6 @@ async def _get_response_text(response: ClientResponse) -> str:
     text = content_bytes.decode("utf-8", errors="ignore")
     return text
 
-
 # ---------------------------
 #   _get_response_json
 # ---------------------------
@@ -190,13 +182,11 @@ async def _get_response_json(response: ClientResponse) -> Dict | None:
     text = await _get_response_text(response)
     return json.loads(text) if text else None
 
-
 # ---------------------------
 #   _check_authorized
 # ---------------------------
 def _check_authorized(response: ClientResponse, result: Dict) -> bool:
     return response.status != 404
-
 
 # ---------------------------
 #   HuaweiCoreApi

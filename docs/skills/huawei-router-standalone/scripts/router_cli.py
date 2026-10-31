@@ -22,6 +22,7 @@
   或配置文件 ~/.huawei-router.json（用 init 命令生成，权限 600）
 """
 import asyncio, json, os, re, sys, hashlib, hmac, time
+from pathlib import Path
 from random import randbytes
 
 try:
@@ -43,7 +44,19 @@ PW = os.environ.get("HW_PASS", "")
 # 配置文件格式（权限建议 600，内含明文密码）：
 #   {"host": "http://192.168.3.1", "user": "admin", "password": "xxx"}
 # 用 `router_cli.py init` 交互式生成，避免手写。
-CONFIG_PATH = os.path.expanduser(os.environ.get("HW_CONFIG", "~/.huawei-router.json"))
+CONFIG_PATH = os.path.realpath(os.path.expanduser("~/.huawei-router.json"))
+
+
+def _safe_download_path(out: str) -> str:
+    """下载输出统一收口到下载目录（防路径穿越；可用 HW_DOWNLOAD_DIR 改位置）。"""
+    name = os.path.basename(str(out or ""))
+    if not name or set(name) == {"."}:
+        raise SystemExit(f"输出文件名不合法: {out!r}")
+    base = os.path.realpath(os.path.expanduser(
+        os.environ.get("HW_DOWNLOAD_DIR", "~/huawei-router-downloads")
+    ))
+    os.makedirs(base, exist_ok=True)
+    return os.path.join(base, name)
 
 
 def _load_config() -> dict:
@@ -227,13 +240,14 @@ class Router:
             return None
 
     async def download(self, path, out):
+        target = _safe_download_path(out)
         r = await self.s.get(self.u(path), timeout=120)
         if r.status != 200:
             return {"error": f"HTTP {r.status}"}
         data = await r.read()
-        with open(out, "wb") as f:
+        with Path(target).open("wb") as f:
             f.write(data)
-        return {"path": out, "size": len(data)}
+        return {"path": target, "size": len(data)}
 
     async def sleep(self, s=1.5):
         await asyncio.sleep(s)
@@ -259,7 +273,7 @@ def _cmd_init() -> None:
     if not pw:
         sys.exit("密码不能为空")
 
-    with open(CONFIG_PATH, "w", encoding="utf-8") as fh:
+    with Path(CONFIG_PATH).open("w", encoding="utf-8") as fh:
         json.dump({"host": host, "user": user, "password": pw}, fh,
                   ensure_ascii=False, indent=2)
     os.chmod(CONFIG_PATH, 0o600)     # 含明文密码，收紧权限
