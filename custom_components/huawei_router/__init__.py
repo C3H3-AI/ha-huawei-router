@@ -178,6 +178,9 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
     updated_data = {**config_entry.data}
     updated_options = {**config_entry.options}
+    # HA 2026.10 起 ConfigEntry.version 只读，目标版本用变量跟踪，
+    # 最后一次性 async_update_entry(version=...) 提交。
+    target_version = config_entry.version
 
     if config_entry.version == 1:
         _LOGGER.debug("Migrating to version 2")
@@ -195,46 +198,49 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
             OPT_ROUTER_CLIENTS_SENSORS: True,
             OPT_DEVICE_TRACKER: True,
         }
-        config_entry.version = 2
+        target_version = 2
 
-    if config_entry.version == 2:
+    if target_version == 2:
         _LOGGER.debug("Migrating to version 3")
         updated_options[OPT_DEVICE_TRACKER_ZONES] = DEFAULT_DEVICE_TRACKER_ZONES
-        config_entry.version = 3
+        target_version = 3
 
-    if config_entry.version == 3:
+    if target_version == 3:
         _LOGGER.debug("Migrating to version 4")
         updated_options[OPT_URL_FILTER_SWITCHES] = DEFAULT_URL_FILTER_SWITCHES
-        config_entry.version = 4
+        target_version = 4
 
-    if config_entry.version == 4:
+    if target_version == 4:
         _LOGGER.debug("Migrating to version 5")
         updated_options[OPT_EVENT_ENTITIES] = DEFAULT_EVENT_ENTITIES
-        config_entry.version = 5
+        target_version = 5
 
-    if config_entry.version == 5:
+    if target_version == 5:
         _LOGGER.debug("Migrating to version 6")
         updated_options[OPT_PORT_MAPPING_SWITCHES] = DEFAULT_PORT_MAPPING_SWITCHES
-        config_entry.version = 6
+        target_version = 6
 
-    if config_entry.version == 6:
+    if target_version == 6:
         _LOGGER.debug("Migrating to version 7")
         updated_options[OPT_TIME_CONTROL_SWITCHES] = DEFAULT_TIME_CONTROL_SWITCHES
         updated_options[OPT_SKIP_OFFLINE_DEVICES] = DEFAULT_SKIP_OFFLINE_DEVICES
         updated_options[OPT_AUTO_ASSOCIATE_DEVICES] = DEFAULT_AUTO_ASSOCIATE_DEVICES
-        config_entry.version = 7
+        target_version = 7
 
-    if config_entry.version == 7:
+    if target_version == 7:
         # v8 引入 device_mac_sensors（新装默认不建 MAC 传感器）。
         # 存量入口显式写 True 保持升级前后行为一致，不悄悄删实体。
         _LOGGER.debug("Migrating to version 8")
         updated_options.setdefault(OPT_DEVICE_MAC_SENSORS, True)
-        config_entry.version = CONFIG_VERSION
+        target_version = CONFIG_VERSION
 
     hass.config_entries.async_update_entry(
-        config_entry, data=updated_data, options=updated_options
+        config_entry,
+        data=updated_data,
+        options=updated_options,
+        version=target_version,
     )
 
-    _LOGGER.info("Migration to version %s successful", config_entry.version)
+    _LOGGER.info("Migration to version %s successful", target_version)
 
     return True
