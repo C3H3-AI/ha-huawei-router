@@ -13,7 +13,6 @@ from .client.classes import MAC_ADDR, KILOBYTES_PER_SECOND
 _TKey = TypeVar("_TKey")
 _TItem = TypeVar("_TItem")
 
-
 # ---------------------------
 #   HuaweiChangesWatcher
 # ---------------------------
@@ -65,7 +64,6 @@ class HuaweiChangesWatcher(Generic[_TKey, _TItem], ABC):
                 removed.append((er, key, missing_item))
 
         return added, removed
-
 
 # ---------------------------
 #   TagsMap
@@ -123,7 +121,6 @@ class TagsMap:
         """Return the devices having specified tag."""
         return self._tag_to_macs.get(tag, [])
 
-
 # ---------------------------
 #   ZonesMap
 # ---------------------------
@@ -159,7 +156,6 @@ class ZonesMap:
 
         self._devices_to_zones[device_id] = zone_id
         await self._storage.async_save(self._devices_to_zones)
-
 
 def get_readable_rate(
         rate: KILOBYTES_PER_SECOND

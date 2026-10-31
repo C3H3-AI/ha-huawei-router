@@ -1,7 +1,5 @@
 """Huawei api extended functions."""
 
-
-
 import asyncio
 
 import datetime
@@ -10,11 +8,7 @@ import logging
 
 from typing import Any, Final, Iterable, Tuple
 
-
-
 from aiohttp import ClientResponse
-
-
 
 from .classes import (
 
@@ -262,13 +256,7 @@ from .crypto import rsa_encode
 
 from .utils import HuaweiFeaturesDetector
 
-
-
 _STATUS_CONNECTED: Final = "Connected"
-
-
-
-
 
 # ---------------------------
 
@@ -286,17 +274,11 @@ class UnsupportedActionError(Exception):
 
         self._message = message
 
-
-
     def __str__(self, *args, **kwargs) -> str:
 
         """Return str(self)."""
 
         return self._message
-
-
-
-
 
 # ---------------------------
 
@@ -314,14 +296,11 @@ class InvalidActionError(Exception):
 
         self._message = message
 
-
-
     def __str__(self, *args, **kwargs) -> str:
 
         """Return str(self)."""
 
         return self._message
-
 
 def _confined_path(file_name: str, allowed_dir: str | None) -> str:
     """把文件名收口到 ``allowed_dir`` 下，杜绝路径穿越。
@@ -340,10 +319,6 @@ def _confined_path(file_name: str, allowed_dir: str | None) -> str:
     if not name or set(name) == {"."}:
         raise InvalidActionError(f"文件名不合法: {file_name!r}")
     return Path(os.path.realpath(allowed_dir)) / name
-
-
-
-
 
 class HuaweiApi:
 
@@ -377,23 +352,17 @@ class HuaweiApi:
 
         self._logger.debug("New instance of HuaweiApi created")
 
-
-
     async def authenticate(self) -> None:
 
         """Perform authentication."""
 
         await self._core_api.authenticate()
 
-
-
     async def disconnect(self) -> None:
 
         """Disconnect from api."""
 
         await self._core_api.disconnect()
-
-
 
     async def _ensure_features_updated(self):
 
@@ -407,8 +376,6 @@ class HuaweiApi:
 
             self._logger.debug("Available features updated")
 
-
-
     @property
 
     def router_url(self) -> str:
@@ -417,8 +384,6 @@ class HuaweiApi:
 
         return self._core_api.router_url
 
-
-
     async def is_feature_available(self, feature: Feature) -> bool:
 
         """Return true if specified feature is known and available."""
@@ -426,8 +391,6 @@ class HuaweiApi:
         await self._ensure_features_updated()
 
         return self._features.is_available(feature)
-
-
 
     @staticmethod
 
@@ -447,8 +410,6 @@ class HuaweiApi:
 
         return True
 
-
-
     @staticmethod
 
     def _wan_info_check_authorized(
@@ -467,8 +428,6 @@ class HuaweiApi:
 
         return True
 
-
-
     async def get_router_info(self) -> HuaweiRouterInfo:
 
         """Return the router information."""
@@ -478,8 +437,6 @@ class HuaweiApi:
             URL_DEVICE_INFO, check_authorized=HuaweiApi._router_data_check_authorized
 
         )
-
-
 
         return HuaweiRouterInfo(
             name=data.get("FriendlyName"),
@@ -491,8 +448,6 @@ class HuaweiApi:
             uptime=data.get("UpTime"),
             mac_address=data.get("MACAddress"),
         )
-
-
 
     async def get_wan_connection_info(self) -> HuaweiConnectionInfo:
         data = await self._core_api.get(
@@ -594,23 +549,17 @@ class HuaweiApi:
             if isinstance(item, dict)
         ]
 
-
-
     async def get_switch_state(self, switch: Switch) -> bool:
 
         """Return the specified switch state."""
 
         await self._ensure_features_updated()
 
-
-
         if switch == Switch.NFC and self._features.is_available(Feature.NFC):
 
             data = await self._core_api.get(URL_SWITCH_NFC)
 
             return data.get("nfcSwitch") == 1
-
-
 
         elif switch == Switch.WIFI_80211R and self._features.is_available(
 
@@ -624,8 +573,6 @@ class HuaweiApi:
 
             return isinstance(setting_value, bool) and setting_value
 
-
-
         elif switch == Switch.WIFI_TWT and self._features.is_available(
 
             Feature.WIFI_TWT
@@ -638,8 +585,6 @@ class HuaweiApi:
 
             return isinstance(setting_value, bool) and setting_value
 
-
-
         elif switch == Switch.WLAN_FILTER and self._features.is_available(
 
             Feature.WLAN_FILTER
@@ -649,8 +594,6 @@ class HuaweiApi:
             _, data = await self.get_wlan_filter_info()
 
             return data.enabled
-
-
 
         elif switch == Switch.GUEST_NETWORK and self._features.is_available(
 
@@ -666,13 +609,9 @@ class HuaweiApi:
 
             )
 
-
-
         else:
 
             raise UnsupportedActionError(f"Unsupported switch: {switch}")
-
-
 
     async def set_switch_state(self, switch: Switch, state: bool) -> None:
 
@@ -680,13 +619,9 @@ class HuaweiApi:
 
         await self._ensure_features_updated()
 
-
-
         if switch == Switch.NFC and self._features.is_available(Feature.NFC):
 
             await self._core_api.post(URL_SWITCH_NFC, {"nfcSwitch": 1 if state else 0})
-
-
 
         elif switch == Switch.WIFI_80211R and self._features.is_available(
 
@@ -704,8 +639,6 @@ class HuaweiApi:
 
             )
 
-
-
         elif switch == Switch.WIFI_TWT and self._features.is_available(
 
             Feature.WIFI_TWT
@@ -722,8 +655,6 @@ class HuaweiApi:
 
             )
 
-
-
         elif switch == Switch.WLAN_FILTER and self._features.is_available(
 
             Feature.WLAN_FILTER
@@ -731,8 +662,6 @@ class HuaweiApi:
         ):
 
             await self._set_wlan_filter_enabled(state)
-
-
 
         elif switch == Switch.GUEST_NETWORK and self._features.is_available(
 
@@ -742,13 +671,9 @@ class HuaweiApi:
 
             await self._set_guest_network_enabled(state)
 
-
-
         else:
 
             raise UnsupportedActionError(f"Unsupported switch: {switch}")
-
-
 
     async def get_known_devices(self) -> Iterable[HuaweiClientDevice]:
 
@@ -759,8 +684,6 @@ class HuaweiApi:
             HuaweiClientDevice(item) for item in await self._core_api.get(URL_HOST_INFO)
 
         ]
-
-
 
     @staticmethod
 
@@ -778,8 +701,6 @@ class HuaweiApi:
 
         return device
 
-
-
     async def get_devices_topology(self) -> Iterable[HuaweiDeviceNode]:
 
         """Return the topology of the devices."""
@@ -791,8 +712,6 @@ class HuaweiApi:
             for item in await self._core_api.get(URL_DEVICE_TOPOLOGY)
 
         ]
-
-
 
     async def execute_action(self, action: Action) -> None:
 
@@ -809,8 +728,6 @@ class HuaweiApi:
         else:
 
             raise UnsupportedActionError(f"Unsupported action name: {action}")
-
-
 
     async def wan_reconnect(self) -> None:
 
@@ -893,8 +810,6 @@ class HuaweiApi:
 
         self._logger.info("WAN reconnect cycle completed")
 
-
-
     async def apply_wlan_filter(
 
         self,
@@ -911,8 +826,6 @@ class HuaweiApi:
 
         """Apply filter to the device."""
 
-
-
         def verify_state(target_state: dict[str, Any]) -> bool:
 
             enabled = target_state.get("MACAddressControlEnabled")
@@ -925,11 +838,7 @@ class HuaweiApi:
 
             return verification_result
 
-
-
         state_2g, state_5g = await self._get_filter_states()
-
-
 
         if state_2g is None:
 
@@ -937,23 +846,17 @@ class HuaweiApi:
 
             return False
 
-
-
         if state_5g is None:
 
             self._logger.debug("Can not find actual 5GHz filter state")
 
             return False
 
-
-
         if not verify_state(state_2g) or not verify_state(state_5g):
 
             self._logger.debug("Verification failed")
 
             return False
-
-
 
         need_action_2g, whitelist_2g, blacklist_2g = await self._process_access_lists(
 
@@ -967,8 +870,6 @@ class HuaweiApi:
 
             return False
 
-
-
         need_action_5g, whitelist_5g, blacklist_5g = await self._process_access_lists(
 
             state_5g, filter_mode, filter_action, device_mac, device_name
@@ -981,13 +882,9 @@ class HuaweiApi:
 
             return False
 
-
-
         if not need_action_2g and not need_action_5g:
 
             return True
-
-
 
         command = {
 
@@ -1025,23 +922,15 @@ class HuaweiApi:
 
         }
 
-
-
         await self._core_api.post(URL_WLAN_FILTER, command)
 
         return True
-
-
 
     async def _set_wlan_filter_enabled(self, value: bool) -> bool:
 
         """Enable or disable wlan filtering."""
 
-
-
         state_2g, state_5g = await self._get_filter_states()
-
-
 
         if state_2g is None:
 
@@ -1049,37 +938,25 @@ class HuaweiApi:
 
             return False
 
-
-
         if state_5g is None:
 
             self._logger.debug("Can not find actual 5GHz filter state")
 
             return False
 
-
-
         current_value_2g = state_2g.get("MACAddressControlEnabled")
 
         current_value_2g = isinstance(current_value_2g, bool) and current_value_2g
-
-
 
         current_value_5g = state_5g.get("MACAddressControlEnabled")
 
         current_value_5g = isinstance(current_value_5g, bool) and current_value_5g
 
-
-
         current_state = current_value_2g and current_value_5g
-
-
 
         if current_state == value:
 
             return True
-
-
 
         command = {
 
@@ -1117,23 +994,15 @@ class HuaweiApi:
 
         }
 
-
-
         await self._core_api.post(URL_WLAN_FILTER, command)
 
         return True
-
-
 
     async def set_wlan_filter_mode(self, value: FilterMode) -> bool:
 
         """Enable or disable wlan filtering."""
 
-
-
         state_2g, state_5g = await self._get_filter_states()
-
-
 
         if state_2g is None:
 
@@ -1141,25 +1010,17 @@ class HuaweiApi:
 
             return False
 
-
-
         if state_5g is None:
 
             self._logger.debug("Can not find actual 5GHz filter state")
 
             return False
 
-
-
         current_state = state_5g.get("MacFilterPolicy")
-
-
 
         if current_state == value.value:
 
             return True
-
-
 
         command = {
 
@@ -1197,13 +1058,9 @@ class HuaweiApi:
 
         }
 
-
-
         await self._core_api.post(URL_WLAN_FILTER, command)
 
         return True
-
-
 
     async def get_wlan_filter_info(self) -> Tuple[HuaweiFilterInfo, HuaweiFilterInfo]:
 
@@ -1214,8 +1071,6 @@ class HuaweiApi:
         info_5g = HuaweiFilterInfo.parse(state_5g)
 
         return info_2g, info_5g
-
-
 
     async def _get_filter_states(self):
 
@@ -1239,8 +1094,6 @@ class HuaweiApi:
 
         return state_2g, state_5g
 
-
-
     async def apply_url_filter_info(self, url_filter_info: HuaweiUrlFilterInfo) -> None:
 
         actual = await self.get_url_filter_info()
@@ -1253,11 +1106,7 @@ class HuaweiApi:
 
         )
 
-
-
         action: str = "update" if existing_item is not None else "create"
-
-
 
         data: dict[str, Any] = {
 
@@ -1283,11 +1132,7 @@ class HuaweiApi:
 
         }
 
-
-
         await self._core_api.post(URL_URL_FILTER, data, extra_data={"action": action})
-
-
 
     async def _process_access_lists(
 
@@ -1311,23 +1156,17 @@ class HuaweiApi:
 
         blacklist = state.get("BMACAddresses")
 
-
-
         if whitelist is None:
 
             self._logger.debug("Can not find whitelist")
 
             return None, None, None
 
-
-
         if blacklist is None:
 
             self._logger.debug("Can not find blacklist")
 
             return None, None, None
-
-
 
         async def get_access_list_item() -> dict[str, Any]:
 
@@ -1355,8 +1194,6 @@ class HuaweiApi:
 
             }
 
-
-
         # | FilterAction | FilterMode |    WL    |   BL   |
 
         # |--------------|------------|----------|--------|
@@ -1369,13 +1206,9 @@ class HuaweiApi:
 
         # | REMOVE       | BLACKLIST  |   None   | Remove |
 
-
-
         whitelist_index: int | None = None
 
         blacklist_index: int | None = None
-
-
 
         for index in range(len(whitelist)):
 
@@ -1395,8 +1228,6 @@ class HuaweiApi:
 
                 break
 
-
-
         for index in range(len(blacklist)):
 
             if device_mac == blacklist[index].get("MACAddress"):
@@ -1414,8 +1245,6 @@ class HuaweiApi:
                 )
 
                 break
-
-
 
         if filter_action == FilterAction.REMOVE:
 
@@ -1455,13 +1284,9 @@ class HuaweiApi:
 
                 raise InvalidActionError(f"Unknown FilterMode: {filter_mode}")
 
-
-
         elif filter_action == FilterAction.ADD:
 
             item_to_add = None
-
-
 
             if filter_mode == FilterMode.BLACKLIST:
 
@@ -1488,8 +1313,6 @@ class HuaweiApi:
                     blacklist.append(item_to_add or await get_access_list_item())
 
                     return True, whitelist, blacklist
-
-
 
             if filter_mode == FilterMode.WHITELIST:
 
@@ -1521,33 +1344,21 @@ class HuaweiApi:
 
                 raise InvalidActionError(f"Unknown FilterMode: {filter_mode}")
 
-
-
         else:
 
             raise InvalidActionError(f"Unknown FilterAction: {filter_action}")
-
-
 
     async def get_is_repeater(self) -> bool:
 
         data = await self._core_api.get(URL_REPEATER_INFO)
 
-
-
         if data is None:
 
             return False
 
-
-
         repeater_enable = data.get("RepeaterEnable", False)
 
-
-
         return isinstance(repeater_enable, bool) and repeater_enable
-
-
 
     @staticmethod
 
@@ -1573,19 +1384,13 @@ class HuaweiApi:
 
         )
 
-
-
         return result
-
-
 
     async def get_url_filter_info(self) -> Iterable[HuaweiUrlFilterInfo]:
 
         data = await self._core_api.get(URL_URL_FILTER)
 
         return [self._to_url_filter_info(item) for item in data]
-
-
 
     @staticmethod
 
@@ -1615,8 +1420,6 @@ class HuaweiApi:
 
         )
 
-
-
     async def get_guest_network_info(
 
         self,
@@ -1629,8 +1432,6 @@ class HuaweiApi:
 
         item_5g = None
 
-
-
         for item in data:
 
             if item.get("FrequencyBand") == Frequency.WIFI_2_4_GHZ:
@@ -1641,15 +1442,11 @@ class HuaweiApi:
 
                 item_5g = item
 
-
-
         result_2g = None if not item_2g else self._to_huawei_guest_network_item(item_2g)
 
         result_5g = None if not item_5g else self._to_huawei_guest_network_item(item_5g)
 
         return result_2g, result_5g
-
-
 
     @staticmethod
 
@@ -1675,8 +1472,6 @@ class HuaweiApi:
 
             raise InvalidActionError("Password must be specified")
 
-
-
         return {
 
             "ID": current_item.item_id,
@@ -1692,8 +1487,6 @@ class HuaweiApi:
             "WpaPreSharedKey": rsa_encode(password, rsa_key),
 
         }
-
-
 
     async def set_guest_network_state(
 
@@ -1717,11 +1510,7 @@ class HuaweiApi:
 
             raise InvalidActionError("Can not obtain RSA public key")
 
-
-
         actual_2g, actual_5g = await self.get_guest_network_info()
-
-
 
         config2g = self._to_guest_wifi_config(
 
@@ -1735,11 +1524,7 @@ class HuaweiApi:
 
         )
 
-
-
         data = {"config5g": config5g, "config2g": config2g}
-
-
 
         await self._core_api.post(
 
@@ -1750,8 +1535,6 @@ class HuaweiApi:
             headers={"Content-Type": "application/json;charset=UTF-8;enp"},
 
         )
-
-
 
     async def get_port_mappings(
 
@@ -1767,8 +1550,6 @@ class HuaweiApi:
 
         ]
 
-
-
     async def set_port_mapping_state(self, port_mapping_id: str, enabled: bool) -> None:
 
         port_mappings = await self._core_api.get(URL_PORT_MAPPING)
@@ -1779,25 +1560,17 @@ class HuaweiApi:
 
         )
 
-
-
         if not target:
 
             raise InvalidActionError(f"Unknown port mapping: {port_mapping_id}")
 
-
-
         target["Enable"] = enabled
-
-
 
         await self._core_api.post(
 
             URL_PORT_MAPPING, target, extra_data={"action": "update"}
 
         )
-
-
 
     async def add_port_mapping(
         self,
@@ -1930,8 +1703,6 @@ class HuaweiApi:
                     return value
         return []
 
-
-
     async def set_port_trigger_state(
         self, port_trigger_id: str, enabled: bool
     ) -> None:
@@ -1956,8 +1727,6 @@ class HuaweiApi:
             URL_PORT_TRIGGER, target, extra_data={"action": "update"}
         )
 
-
-
     async def add_port_trigger(
         self, name: str, application_id: str, enabled: bool = False
     ) -> bool:
@@ -1979,8 +1748,6 @@ class HuaweiApi:
             return True
         except Exception:
             return False
-
-
 
     async def remove_port_trigger(self, port_trigger_id: str) -> bool:
         """Remove a port trigger rule by its ID.
@@ -2004,16 +1771,12 @@ class HuaweiApi:
         except Exception:
             return False
 
-
-
     async def get_port_triggers(self) -> Iterable[HuaweiPortTriggerItem]:
         """Get all port trigger rules."""
         return [
             HuaweiPortTriggerItem.parse(item)
             for item in await self._core_api.get(URL_PORT_TRIGGER)
         ]
-
-
 
     async def get_upnp_port_mappings(self) -> Iterable[HuaweiUPnPPortMappingItem]:
         """Get all UPnP port mapping rules."""
@@ -2022,13 +1785,9 @@ class HuaweiApi:
             return [HuaweiUPnPPortMappingItem.parse(item) for item in data]
         return []
 
-
-
     async def _set_guest_network_enabled(self, enabled: bool) -> None:
 
         actual_2g, actual_5g = await self.get_guest_network_info()
-
-
 
         actual_enabled = (actual_2g is not None and actual_2g.enabled) or (
 
@@ -2036,17 +1795,11 @@ class HuaweiApi:
 
         )
 
-
-
         if actual_enabled == enabled:
 
             return
 
-
-
         primary_item = None
-
-
 
         for item in await self.get_guest_network_info():
 
@@ -2056,13 +1809,9 @@ class HuaweiApi:
 
                 break
 
-
-
         if not primary_item:
 
             raise InvalidActionError("No one frequency can be enabled")
-
-
 
         await self.set_guest_network_state(
 
@@ -2078,15 +1827,11 @@ class HuaweiApi:
 
         )
 
-
-
     async def get_time_control_items(self) -> Iterable[HuaweiTimeControlItem]:
 
         data = await self._core_api.get(URL_TIME_CONTROL)
 
         return [HuaweiTimeControlItem(item) for item in data]
-
-
 
     async def set_time_control_item_state(
 
@@ -2110,8 +1855,6 @@ class HuaweiApi:
 
         )
 
-
-
         if not target:
 
             raise InvalidActionError(
@@ -2120,11 +1863,7 @@ class HuaweiApi:
 
             )
 
-
-
         target["Enable"] = enabled
-
-
 
         await self._core_api.post(
 

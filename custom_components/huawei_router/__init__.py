@@ -54,7 +54,6 @@ CONFIG_SCHEMA = config_validation.removed(DOMAIN, raise_if_present=False)
 
 _LOGGER = logging.getLogger(__name__)
 
-
 # ---------------------------
 #   _get_platforms
 # ---------------------------
@@ -69,7 +68,6 @@ def _get_platforms(integration_options: HuaweiIntegrationOptions) -> Iterable[st
 
     return filter(lambda item: item not in excluded_platforms, PLATFORMS)
 
-
 # ---------------------------
 #   async_setup
 # ---------------------------
@@ -77,7 +75,6 @@ async def async_setup(hass, _config):
     """Set up configured Huawei Controller."""
     hass.data[DOMAIN] = {}
     return True
-
 
 # ---------------------------
 #   async_setup_entry
@@ -118,7 +115,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     await async_setup_services(hass, config_entry)
     return True
 
-
 async def _async_update_primary_router_name(hass, config_entry, coordinator) -> None:
     """更新主路由设备名称为路由器API返回的真实名称。"""
     actual_name = coordinator.primary_router_name
@@ -152,14 +148,12 @@ async def update_listener(hass: HomeAssistant, config_entry: ConfigEntry) -> Non
     """Update listener."""
     await hass.config_entries.async_reload(config_entry.entry_id)
 
-
 # ---------------------------
 #   async_update_entry
 # ---------------------------
 async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update options."""
     await hass.config_entries.async_reload(entry.entry_id)
-
 
 # ---------------------------
 #   async_unload_entry
@@ -175,7 +169,6 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
             coordinator.unload()
     await async_unload_services(hass, config_entry)
     return unload_ok
-
 
 async def async_migrate_entry(hass, config_entry: ConfigEntry):
     """Migrate old entry."""

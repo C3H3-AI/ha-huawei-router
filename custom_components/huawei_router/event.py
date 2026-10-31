@@ -26,7 +26,6 @@ _EVENT_UID_DEVICE: Final = "devices"
 
 ENTITY_DOMAIN: Final = "event"
 
-
 async def async_setup_entry(
         hass: HomeAssistant,
         config_entry: ConfigEntry,
@@ -63,12 +62,10 @@ async def async_setup_entry(
 
     async_add_entities(events)
 
-
 @dataclass
 class HuaweiEventEntityDescription(EventEntityDescription):
     event_uid: str | None = None
     event_name: str | None = None
-
 
 class HuaweiEvent(EventEntity):
     _attr_has_entity_name = True

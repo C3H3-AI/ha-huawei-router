@@ -1,12 +1,8 @@
 from typing import Any
 
-
-
 from homeassistant.config_entries import ConfigEntry
 
 from homeassistant.const import CONF_SCAN_INTERVAL
-
-
 
 from .const import (
     DEFAULT_DEVICE_TRACKER,
@@ -37,10 +33,6 @@ from .const import (
     OPT_DEVICE_SENSOR_GROUPS,
 )
 
-
-
-
-
 # ---------------------------
 
 #   get_option
@@ -54,10 +46,6 @@ def get_option(
 ) -> Any | None:
 
     return config_entry.options.get(name, default)
-
-
-
-
 
 # ---------------------------
 
@@ -73,8 +61,6 @@ class HuaweiIntegrationOptions:
 
         self._config_entry = config_entry
 
-
-
     @property
 
     def update_interval(self) -> int:
@@ -83,8 +69,6 @@ class HuaweiIntegrationOptions:
 
         # 钳制最小刷新间隔,防止过低频率对路由器造成请求风暴
         return max(MIN_SCAN_INTERVAL, get_option(self._config_entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
-
-
 
     @property
     def device_sensor_groups(self) -> list[str]:
@@ -107,8 +91,6 @@ class HuaweiIntegrationOptions:
 
         )
 
-
-
     @property
 
     def devices_tags(self) -> bool:
@@ -116,8 +98,6 @@ class HuaweiIntegrationOptions:
         """Return option 'devices tags' value"""
 
         return get_option(self._config_entry, OPT_DEVICES_TAGS, DEFAULT_DEVICES_TAGS)
-
-
 
     @property
 
@@ -131,8 +111,6 @@ class HuaweiIntegrationOptions:
 
         )
 
-
-
     @property
 
     def device_tracker_zones(self) -> bool:
@@ -144,8 +122,6 @@ class HuaweiIntegrationOptions:
             self._config_entry, OPT_DEVICE_TRACKER_ZONES, DEFAULT_DEVICE_TRACKER_ZONES
 
         )
-
-
 
     @property
 
@@ -159,8 +135,6 @@ class HuaweiIntegrationOptions:
 
         )
 
-
-
     @property
 
     def port_mapping_switches(self) -> bool:
@@ -172,8 +146,6 @@ class HuaweiIntegrationOptions:
             self._config_entry, OPT_PORT_MAPPING_SWITCHES, DEFAULT_PORT_MAPPING_SWITCHES
 
         )
-
-
 
     @property
 
@@ -191,8 +163,6 @@ class HuaweiIntegrationOptions:
 
         )
 
-
-
     @property
 
     def event_entities(self) -> bool:
@@ -208,8 +178,6 @@ class HuaweiIntegrationOptions:
             DEFAULT_EVENT_ENTITIES,
 
         )
-
-
 
     @property
     def time_control_switches(self) -> bool:

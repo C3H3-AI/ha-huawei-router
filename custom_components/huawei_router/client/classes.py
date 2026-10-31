@@ -1,10 +1,6 @@
 """Huawei api classes."""
 
-
-
 from __future__ import annotations
-
-
 
 from datetime import datetime, time
 
@@ -13,8 +9,6 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum, StrEnum
 
 from typing import Any, Dict, Final, Iterable, TypeAlias
-
-
 
 VENDOR_CLASS_ID_ROUTER: Final = "router"
 HUAWEI_OUI_PREFIXES: Final = [
@@ -253,7 +247,6 @@ HUAWEI_OUI_PREFIXES: Final = [
     "fc:fc:4d", "fc:fc:73", "fc:fd:25", "fc:fd:68",
 ]
 
-
 def is_huawei_device(mac: str | None) -> bool:
     """Check if MAC address belongs to a Huawei device."""
     if not mac:
@@ -262,23 +255,13 @@ def is_huawei_device(mac: str | None) -> bool:
     mac_prefix = mac_upper[:8]
     return mac_prefix in HUAWEI_OUI_PREFIXES
 
-
-
 NODE_HILINK_TYPE_DEVICE: Final = "Device"
 
 NODE_HILINK_TYPE_NONE: Final = "None"
 
-
-
 MAC_ADDR: TypeAlias = str
 
-
-
 KILOBYTES_PER_SECOND: TypeAlias = int
-
-
-
-
 
 # ---------------------------
 
@@ -306,10 +289,6 @@ class Feature(StrEnum):
 
     TIME_CONTROL = "feature_time_control"
 
-
-
-
-
 # ---------------------------
 
 #   Switch
@@ -328,10 +307,6 @@ class Switch(StrEnum):
 
     GUEST_NETWORK = "guest_network_switch"
 
-
-
-
-
 # ---------------------------
 
 #   Action
@@ -343,10 +318,6 @@ class Action(StrEnum):
     REBOOT: Final = "reboot_action"
 
     WAN_RECONNECT: Final = "wan_reconnect_action"
-
-
-
-
 
 # ---------------------------
 
@@ -360,10 +331,6 @@ class Frequency(StrEnum):
 
     WIFI_5_GHZ = "5GHz"
 
-
-
-
-
 # ---------------------------
 
 #   FilterAction
@@ -376,10 +343,6 @@ class FilterAction(Enum):
 
     REMOVE = 1
 
-
-
-
-
 # ---------------------------
 
 #   FilterMode
@@ -391,10 +354,6 @@ class FilterMode(IntEnum):
     BLACKLIST = 0
 
     WHITELIST = 1
-
-
-
-
 
 # ---------------------------
 
@@ -409,10 +368,6 @@ class HuaweiGuestNetworkDuration(IntEnum):
     ONE_DAY = 2
 
     UNLIMITED = 3
-
-
-
-
 
 # ---------------------------
 
@@ -429,10 +384,6 @@ class HuaweiRsaPublicKey:
     rsae: str
 
     signature: str
-
-
-
-
 
 # ---------------------------
 
@@ -464,10 +415,6 @@ class HuaweiGuestNetworkItem:
 
     rest_rime: int
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiFilterItem
@@ -481,10 +428,6 @@ class HuaweiFilterItem:
     mac_address: MAC_ADDR
 
     name: str | None = None
-
-
-
-
 
 # ---------------------------
 
@@ -505,10 +448,6 @@ class HuaweiUrlFilterInfo:
     dev_manual: bool
 
     devices: list[HuaweiFilterItem]
-
-
-
-
 
 # ---------------------------
 
@@ -531,10 +470,6 @@ class DayOfWeek(StrEnum):
     SATURDAY = "Saturday"
 
     SUNDAY = "Sunday"
-
-
-
-
 
 # ---------------------------
 
@@ -578,8 +513,6 @@ class HuaweiPortMappingItem:
 
         self._application_id = application_id
 
-
-
     @classmethod
 
     def parse(cls, raw_data: dict[str, Any]) -> HuaweiPortMappingItem:
@@ -590,13 +523,9 @@ class HuaweiPortMappingItem:
 
             raise ValueError("Id can not be empty")
 
-
-
         raw_enabled = raw_data.get("Enable")
 
         enabled = isinstance(raw_enabled, bool) and raw_enabled
-
-
 
         ip_address = raw_data.get("HostIPAddress", "")
 
@@ -608,15 +537,11 @@ class HuaweiPortMappingItem:
 
         application_id = raw_data.get("ApplicationID", "")
 
-
-
         return HuaweiPortMappingItem(
 
             id, name, enabled, ip_address, mac_address, host_name, application_id
 
         )
-
-
 
     @property
 
@@ -624,15 +549,11 @@ class HuaweiPortMappingItem:
 
         return self._id
 
-
-
     @property
 
     def name(self) -> str:
 
         return self._name
-
-
 
     @property
 
@@ -640,15 +561,11 @@ class HuaweiPortMappingItem:
 
         return self._enabled
 
-
-
     @property
 
     def host_name(self) -> str:
 
         return self._host_name
-
-
 
     @property
 
@@ -656,19 +573,11 @@ class HuaweiPortMappingItem:
 
         return self._host_ip
 
-
-
     @property
-
-
 
     def host_mac(self) -> str:
 
-
-
         return self._host_mac
-
-
 
 # ---------------------------
 
@@ -711,7 +620,6 @@ class HuaweiPortTriggerItem:
     @property
     def enabled(self) -> bool:
         return self._enabled
-
 
 # ---------------------------
 
@@ -773,7 +681,6 @@ class HuaweiUPnPPortMappingItem:
     def description(self) -> str:
         return self._description
 
-
 # ---------------------------
 
 #   HuaweiDhcpStaticLeaseItem
@@ -798,7 +705,6 @@ class HuaweiDhcpStaticLeaseItem:
             mac_address=raw_data.get("Chaddr", ""),
             enabled=isinstance(raw_enabled, bool) and raw_enabled,
         )
-
 
 # ---------------------------
 
@@ -830,8 +736,6 @@ class HuaweiFilterInfo:
 
         self._mode = mode
 
-
-
     @classmethod
 
     def parse(cls, raw_data: dict[str, Any]) -> HuaweiFilterInfo:
@@ -839,8 +743,6 @@ class HuaweiFilterInfo:
         raw_enabled = raw_data.get("MACAddressControlEnabled")
 
         enabled = isinstance(raw_enabled, bool) and raw_enabled
-
-
 
         raw_mode = raw_data.get("MacFilterPolicy")
 
@@ -856,8 +758,6 @@ class HuaweiFilterInfo:
 
             raise ValueError("MacFilterPolicy must be in range [0..1]")
 
-
-
         def get_item(raw_item: dict[str, Any]) -> HuaweiFilterItem:
 
             return HuaweiFilterItem(
@@ -866,23 +766,15 @@ class HuaweiFilterInfo:
 
             )
 
-
-
         raw_whitelist = raw_data.get("WMACAddresses")
 
         whitelist = [get_item(item) for item in raw_whitelist]
-
-
 
         raw_blacklist = raw_data.get("BMACAddresses")
 
         blacklist = [get_item(item) for item in raw_blacklist]
 
-
-
         return HuaweiFilterInfo(enabled, whitelist, blacklist, mode)
-
-
 
     @property
 
@@ -890,15 +782,11 @@ class HuaweiFilterInfo:
 
         return self._enabled
 
-
-
     @property
 
     def mode(self) -> FilterMode:
 
         return self._mode
-
-
 
     @property
 
@@ -906,17 +794,11 @@ class HuaweiFilterInfo:
 
         return self._whitelist
 
-
-
     @property
 
     def blacklist(self) -> Iterable[HuaweiFilterItem]:
 
         return self._blacklist
-
-
-
-
 
 # ---------------------------
 
@@ -935,7 +817,6 @@ class HuaweiRouterInfo:
     uptime: int
     mac_address: str | None = None
 
-
 # ---------------------------
 #   HuaweiProcessStatus (api/system/processstatus)
 # ---------------------------
@@ -951,7 +832,6 @@ class HuaweiProcessStatus:
 
     cpu_usage: int
     mem_usage: int
-
 
 # ---------------------------
 #   HuaweiDeviceCount (api/system/device_count)
@@ -970,7 +850,6 @@ class HuaweiDeviceCount:
     lan_active: int
     user_number: int
 
-
 # ---------------------------
 #   HuaweiNtpStatus (api/ntwk/sntp)
 # ---------------------------
@@ -988,7 +867,6 @@ class HuaweiNtpStatus:
     server_primary: str | None = None
     server_secondary: str | None = None
 
-
 # ---------------------------
 #   HuaweiChannelInfo (api/ntwk/channelinfo)
 # ---------------------------
@@ -1002,7 +880,6 @@ class HuaweiChannelInfo:
 
     channel_2g: int | None = None
     channel_5g: int | None = None
-
 
 # ---------------------------
 #   HuaweiEthPort (api/ntwk/ethnegotiation)
@@ -1020,10 +897,6 @@ class HuaweiEthPort:
     speed: int
     status: int = 0
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiConnectionInfo
@@ -1039,10 +912,6 @@ class HuaweiConnectionInfo:
     upload_rate: KILOBYTES_PER_SECOND
     download_rate: KILOBYTES_PER_SECOND
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiClientDevice
@@ -1057,15 +926,11 @@ class HuaweiClientDevice:
 
         self._data: Dict = device_data
 
-
-
     def get_raw_value(self, property_name: str) -> Any | None:
 
         """Return the raw value from api response."""
 
         return self._data.get(property_name)
-
-
 
     @property
 
@@ -1074,8 +939,6 @@ class HuaweiClientDevice:
         """Return the mac address of the device."""
 
         return self._data.get("MACAddress")
-
-
 
     @property
 
@@ -1087,8 +950,6 @@ class HuaweiClientDevice:
 
         return isinstance(value, bool) and value
 
-
-
     @property
 
     def rssi(self) -> int | None:
@@ -1098,8 +959,6 @@ class HuaweiClientDevice:
         value = self._data.get("rssi")
 
         return value if isinstance(value, int) else None
-
-
 
     @property
     def is_hilink(self) -> bool:
@@ -1116,8 +975,6 @@ class HuaweiClientDevice:
             return True
         return False
 
-
-
     @property
 
     def is_guest(self) -> bool:
@@ -1127,8 +984,6 @@ class HuaweiClientDevice:
         value = self._data.get("IsGuest")
 
         return isinstance(value, bool) and value
-
-
 
     @property
     def is_router(self) -> bool:
@@ -1146,8 +1001,6 @@ class HuaweiClientDevice:
             return True
         return False
 
-
-
     @property
 
     def actual_name(self) -> str | None:
@@ -1155,8 +1008,6 @@ class HuaweiClientDevice:
         """Return the name of the device."""
 
         return self._data.get("ActualName")
-
-
 
     @property
 
@@ -1166,8 +1017,6 @@ class HuaweiClientDevice:
 
         return self._data.get("HostName")
 
-
-
     @property
 
     def ip_address(self) -> str | None:
@@ -1175,8 +1024,6 @@ class HuaweiClientDevice:
         """Return the ip address of the device."""
 
         return self._data.get("IPAddress")
-
-
 
     @property
 
@@ -1186,8 +1033,6 @@ class HuaweiClientDevice:
 
         return self._data.get("InterfaceType")
 
-
-
     @property
 
     def upload_rate(self) -> KILOBYTES_PER_SECOND:
@@ -1195,8 +1040,6 @@ class HuaweiClientDevice:
         """Return the upload rate in kilobytes per second."""
 
         return self._data.get("UpRate", 0)
-
-
 
     @property
     def download_rate(self) -> KILOBYTES_PER_SECOND:
@@ -1208,7 +1051,6 @@ class HuaweiClientDevice:
         """Return the uptime in seconds if available."""
         value = self._data.get("UpTime")
         return value if isinstance(value, int) else None
-
 
 # ---------------------------
 #   HuaweiClientDevice
@@ -1227,8 +1069,6 @@ class HuaweiDeviceNode:
 
         self._connected_devices: list[HuaweiDeviceNode] = []
 
-
-
     @property
 
     def mac_address(self) -> MAC_ADDR:
@@ -1236,8 +1076,6 @@ class HuaweiDeviceNode:
         """Return the mac address of the device."""
 
         return self._mac
-
-
 
     @property
 
@@ -1247,8 +1085,6 @@ class HuaweiDeviceNode:
 
         return self._hilink_type
 
-
-
     @property
 
     def connected_devices(self) -> Iterable[HuaweiDeviceNode]:
@@ -1257,17 +1093,11 @@ class HuaweiDeviceNode:
 
         return self._connected_devices
 
-
-
     def add_device(self, device: HuaweiDeviceNode) -> None:
 
         """Add connected node to the device."""
 
         self._connected_devices.append(device)
-
-
-
-
 
 # ---------------------------
 
@@ -1293,8 +1123,6 @@ class HuaweiTimeControlItemDay:
 
         self._end = end
 
-
-
     @property
 
     def day_of_week(self) -> DayOfWeek:
@@ -1302,8 +1130,6 @@ class HuaweiTimeControlItemDay:
         """Return the day of week."""
 
         return self._day_of_week
-
-
 
     @property
 
@@ -1313,8 +1139,6 @@ class HuaweiTimeControlItemDay:
 
         return self._is_enabled
 
-
-
     @property
 
     def start(self) -> time:
@@ -1323,8 +1147,6 @@ class HuaweiTimeControlItemDay:
 
         return self._start
 
-
-
     @property
 
     def end(self) -> time:
@@ -1332,10 +1154,6 @@ class HuaweiTimeControlItemDay:
         """Return the end time at this day."""
 
         return self._end
-
-
-
-
 
 # ---------------------------
 
@@ -1353,29 +1171,19 @@ class HuaweiTimeControlItem:
 
         self._days: dict[DayOfWeek, HuaweiTimeControlItemDay] = {}
 
-
-
         for day_of_week in DayOfWeek:
-
-
 
             enabled_value = self._data.get(f"{day_of_week.value}enable")
 
             is_enabled: bool = isinstance(enabled_value, bool) and enabled_value
 
-
-
             start_value = self._data.get(f"{day_of_week.value}From", "00:00")
 
             start: time = datetime.strptime(start_value, "%H:%M").time()
 
-
-
             end_value = self._data.get(f"{day_of_week.value}To", "00:00")
 
             end: time = datetime.strptime(end_value, "%H:%M").time()
-
-
 
             day: HuaweiTimeControlItemDay = HuaweiTimeControlItemDay(
 
@@ -1383,11 +1191,7 @@ class HuaweiTimeControlItem:
 
             )
 
-
-
             self._days[day_of_week] = day
-
-
 
     @property
 
@@ -1396,8 +1200,6 @@ class HuaweiTimeControlItem:
         """Return the state of the item."""
 
         return self._data.get("ID")
-
-
 
     @property
 
@@ -1419,8 +1221,6 @@ class HuaweiTimeControlItem:
 
         ]
 
-
-
         device_names_str = (
 
             "for " + ", ".join(device_names)
@@ -1430,8 +1230,6 @@ class HuaweiTimeControlItem:
             else "for some devices"
 
         )
-
-
 
         if len(days) == 7:
 
@@ -1449,11 +1247,7 @@ class HuaweiTimeControlItem:
 
             days_str = "on " + ", ".join(days)
 
-
-
         return f"Time limit rule {device_names_str} {days_str}"
-
-
 
     @property
 
@@ -1465,8 +1259,6 @@ class HuaweiTimeControlItem:
 
         return isinstance(value, bool) and value
 
-
-
     @property
 
     def devices_mac(self) -> Iterable[MAC_ADDR]:
@@ -1474,8 +1266,6 @@ class HuaweiTimeControlItem:
         """Return the state of the item."""
 
         return [device.get("MACAddress", "no_mac_addr") for device in self._data.get("Devices", [])]
-
-
 
     @property
 
@@ -1485,15 +1275,11 @@ class HuaweiTimeControlItem:
 
         return self._days
 
-
-
     def update(self, source: HuaweiTimeControlItem) -> None:
 
         self._data = source._data
 
         self._days = source._days
-
-
 
     def set_enabled(self, enabled: bool) -> None:
 

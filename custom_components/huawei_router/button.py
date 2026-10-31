@@ -26,7 +26,6 @@ _FUNCTION_UID_REBOOT: Final = "button_reboot"
 
 ENTITY_DOMAIN: Final = "button"
 
-
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ) -> None:
@@ -39,7 +38,6 @@ async def async_setup_entry(
 
     # 子路由通过 ActiveRoutersWatcher 动态创建重启按键
     _watch_for_satellite_routers(coordinator, config_entry, async_add_entities)
-
 
 def _watch_for_satellite_routers(
     coordinator, config_entry, async_add_entities
@@ -61,7 +59,6 @@ def _watch_for_satellite_routers(
 
     config_entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
     coordinator_updated()
-
 
 class HuaweiButton(CoordinatorEntity[HuaweiDataUpdateCoordinator], ButtonEntity, ABC):
     _attr_has_entity_name = True
@@ -100,7 +97,6 @@ class HuaweiButton(CoordinatorEntity[HuaweiDataUpdateCoordinator], ButtonEntity,
         return asyncio.run_coroutine_threadsafe(
             self.async_press(), self.hass.loop
         ).result()
-
 
 class HuaweiRebootButton(HuaweiButton):
     def __init__(

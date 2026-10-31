@@ -1,10 +1,6 @@
 """Huawei router switches."""
 
-
-
 from __future__ import annotations
-
-
 
 from abc import ABC
 
@@ -13,8 +9,6 @@ import asyncio
 import logging
 
 from typing import Any, Final
-
-
 
 from homeassistant.components.switch import SwitchEntity
 
@@ -29,8 +23,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity_registry import EntityRegistry
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-
 
 from .classes import ConnectedDevice, EmulatedSwitch
 
@@ -72,11 +64,7 @@ from .update_coordinator import (
 
 )
 
-
-
 _LOGGER = logging.getLogger(__name__)
-
-
 
 _FUNCTION_DISPLAYED_NAME_NFC: Final = "NFC"
 _FUNCTION_ID_NFC: Final = "switch_nfc"
@@ -105,13 +93,7 @@ _FUNCTION_ID_GUEST_NETWORK: Final = "switch_guest_network"
 _FUNCTION_DISPLAYED_NAME_TIME_CONTROL: Final = "时间控制"
 _FUNCTION_ID_TIME_CONTROL: Final = "switch_time_control"
 
-
-
 ENTITY_DOMAIN: Final = "switch"
-
-
-
-
 
 # ---------------------------
 
@@ -137,10 +119,6 @@ async def _add_nfc_if_available(
     except Exception as err:
         _LOGGER.debug("Could not check NFC feature at %s: %s", mac, err)
 
-
-
-
-
 # ---------------------------
 
 #   _add_access_switch_if_available
@@ -164,10 +142,6 @@ async def _add_access_switch_if_available(
             _LOGGER.debug("Feature '%s' is not supported", Feature.WLAN_FILTER)
     except Exception as err:
         _LOGGER.debug("Could not check WLAN filter feature at %s: %s", mac, err)
-
-
-
-
 
 # ---------------------------
 
@@ -201,10 +175,6 @@ async def _add_time_control_switch_if_available(
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.TIME_CONTROL)
 
-
-
-
-
 # ---------------------------
 
 #   _add_url_filter_switch_if_available
@@ -236,10 +206,6 @@ async def _add_url_filter_switch_if_available(
     else:
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.URL_FILTER)
-
-
-
-
 
 # ---------------------------
 
@@ -273,10 +239,6 @@ async def _add_port_mapping_switch_if_available(
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.PORT_MAPPING)
 
-
-
-
-
 # ---------------------------
 
 #   async_setup_entry
@@ -297,15 +259,9 @@ async def async_setup_entry(
 
     coordinator = get_coordinator(hass, config_entry)
 
-
-
     switches: list[HuaweiSwitch] = []
 
-
-
     is_nfc_available: bool = await coordinator.is_feature_available(Feature.NFC)
-
-
 
     if is_nfc_available:
 
@@ -315,8 +271,6 @@ async def async_setup_entry(
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.NFC)
 
-
-
     if await coordinator.is_feature_available(Feature.WIFI_80211R):
 
         switches.append(HuaweiWifi80211RSwitch(coordinator))
@@ -324,8 +278,6 @@ async def async_setup_entry(
     else:
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.WIFI_80211R)
-
-
 
     if await coordinator.is_feature_available(Feature.WIFI_TWT):
 
@@ -335,8 +287,6 @@ async def async_setup_entry(
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.WIFI_TWT)
 
-
-
     if await coordinator.is_feature_available(Feature.WLAN_FILTER):
 
         switches.append(HuaweiWlanFilterSwitch(coordinator))
@@ -344,8 +294,6 @@ async def async_setup_entry(
     else:
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.WLAN_FILTER)
-
-
 
     if await coordinator.is_feature_available(Feature.GUEST_NETWORK):
 
@@ -355,11 +303,7 @@ async def async_setup_entry(
 
         _LOGGER.debug("Feature '%s' is not supported", Feature.GUEST_NETWORK)
 
-
-
     async_add_entities(switches)
-
-
 
     watch_for_additional_routers(coordinator, config_entry, async_add_entities)
 
@@ -370,10 +314,6 @@ async def async_setup_entry(
     watch_for_port_mappings(coordinator, config_entry, async_add_entities)
 
     watch_for_time_control_items(coordinator, config_entry, async_add_entities)
-
-
-
-
 
 # ---------------------------
 
@@ -395,8 +335,6 @@ def watch_for_additional_routers(
 
     known_nfc_switches: dict[MAC_ADDR, HuaweiSwitch] = {}
 
-
-
     @callback
 
     def on_router_added(device_mac: MAC_ADDR, router: ConnectedDevice) -> None:
@@ -413,8 +351,6 @@ def watch_for_additional_routers(
 
         )
 
-
-
     @callback
 
     def coordinator_updated() -> None:
@@ -423,15 +359,9 @@ def watch_for_additional_routers(
 
         router_watcher.look_for_changes(on_router_added)
 
-
-
     config_entry.async_on_unload(coordinator.async_add_listener(coordinator_updated))
 
     coordinator_updated()
-
-
-
-
 
 # ---------------------------
 
@@ -504,10 +434,6 @@ def watch_for_wireless_devices(coordinator, config_entry, async_add_entities):
         )
         coordinator_updated()
 
-
-
-
-
 # ---------------------------
 
 #   watch_for_url_filters
@@ -520,13 +446,9 @@ def watch_for_url_filters(coordinator, config_entry, async_add_entities):
 
     is_url_filter_switches_enabled = integration_options.url_filter_switches
 
-
-
     known_url_filter_switches: dict[str, HuaweiSwitch] = {}
 
     filters_watcher: HuaweiUrlFiltersWatcher = HuaweiUrlFiltersWatcher(coordinator)
-
-
 
     @callback
 
@@ -549,8 +471,6 @@ def watch_for_url_filters(coordinator, config_entry, async_add_entities):
             )
 
         )
-
-
 
     @callback
 
@@ -588,8 +508,6 @@ def watch_for_url_filters(coordinator, config_entry, async_add_entities):
 
             )
 
-
-
     @callback
 
     def coordinator_updated() -> None:
@@ -600,8 +518,6 @@ def watch_for_url_filters(coordinator, config_entry, async_add_entities):
 
             filters_watcher.look_for_changes(on_filter_added, on_filter_removed)
 
-
-
     if is_url_filter_switches_enabled:
 
         config_entry.async_on_unload(
@@ -611,10 +527,6 @@ def watch_for_url_filters(coordinator, config_entry, async_add_entities):
         )
 
         coordinator_updated()
-
-
-
-
 
 # ---------------------------
 
@@ -628,8 +540,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
 
     is_port_mapping_switches_enabled = integration_options.port_mapping_switches
 
-
-
     known_port_mapping_switches: dict[str, HuaweiSwitch] = {}
 
     port_mappings_watcher: HuaweiPortMappingsWatcher = HuaweiPortMappingsWatcher(
@@ -637,8 +547,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
         coordinator
 
     )
-
-
 
     @callback
 
@@ -661,8 +569,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
             )
 
         )
-
-
 
     @callback
 
@@ -700,8 +606,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
 
             )
 
-
-
     @callback
 
     def coordinator_updated() -> None:
@@ -716,8 +620,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
 
             )
 
-
-
     if is_port_mapping_switches_enabled:
 
         config_entry.async_on_unload(
@@ -727,10 +629,6 @@ def watch_for_port_mappings(coordinator, config_entry, async_add_entities):
         )
 
         coordinator_updated()
-
-
-
-
 
 # ---------------------------
 
@@ -744,8 +642,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
 
     is_time_control_switches_enabled = integration_options.time_control_switches
 
-
-
     known_time_control_switches: dict[str, HuaweiSwitch] = {}
 
     time_controls_watcher: HuaweiTimeControlItemsWatcher = (
@@ -753,8 +649,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
         HuaweiTimeControlItemsWatcher(coordinator)
 
     )
-
-
 
     @callback
 
@@ -781,8 +675,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
             )
 
         )
-
-
 
     @callback
 
@@ -820,8 +712,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
 
             )
 
-
-
     @callback
 
     def coordinator_updated() -> None:
@@ -836,8 +726,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
 
             )
 
-
-
     if is_time_control_switches_enabled:
 
         config_entry.async_on_unload(
@@ -847,10 +735,6 @@ def watch_for_time_control_items(coordinator, config_entry, async_add_entities):
         )
 
         coordinator_updated()
-
-
-
-
 
 # ---------------------------
 
@@ -887,8 +771,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
         self._attr_device_info = coordinator.get_device_info(device_mac)
 
-
-
     async def async_added_to_hass(self) -> None:
 
         """Run when entity about to be added to hass."""
@@ -909,8 +791,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
             _LOGGER.debug("Switch %s added to hass", self._switch)
 
-
-
     @property
 
     def available(self) -> bool:
@@ -925,8 +805,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
         )
 
-
-
     @callback
 
     def _handle_coordinator_update(self) -> None:
@@ -934,8 +812,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
         """Handle updated data from the coordinator."""
 
         super()._handle_coordinator_update()
-
-
 
     @property
 
@@ -949,8 +825,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
         )
 
-
-
     async def _go_to_state(self, state: bool):
 
         """Perform transition to the specified state."""
@@ -963,23 +837,17 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
         self.async_write_ha_state()
 
-
-
     async def async_turn_off(self, **kwargs: Any) -> None:
 
         """async_turn_off."""
 
         await self._go_to_state(False)
 
-
-
     async def async_turn_on(self, **kwargs: Any) -> None:
 
         """async_turn_on."""
 
         await self._go_to_state(True)
-
-
 
     def turn_on(self, **kwargs: Any) -> None:
 
@@ -991,8 +859,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
 
         ).result()
 
-
-
     def turn_off(self, **kwargs: Any) -> None:
 
         """turn_off."""
@@ -1002,10 +868,6 @@ class HuaweiSwitch(CoordinatorEntity[HuaweiDataUpdateCoordinator], SwitchEntity,
             self.async_turn_off(**kwargs), self.hass.loop
 
         ).result()
-
-
-
-
 
 # ---------------------------
 
@@ -1029,8 +891,6 @@ class HuaweiNfcSwitch(HuaweiSwitch):
 
         super().__init__(coordinator, Switch.NFC, device.mac if device else None)
 
-
-
         self._attr_name = _FUNCTION_DISPLAYED_NAME_NFC
 
         self._attr_unique_id = generate_entity_unique_id(
@@ -1053,10 +913,6 @@ class HuaweiNfcSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:nfc"
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiWifi80211RSwitch
@@ -1070,8 +926,6 @@ class HuaweiWifi80211RSwitch(HuaweiSwitch):
         """Initialize."""
 
         super().__init__(coordinator, Switch.WIFI_80211R, None)
-
-
 
         self._attr_name = _FUNCTION_DISPLAYED_NAME_WIFI_802_11_R
 
@@ -1093,10 +947,6 @@ class HuaweiWifi80211RSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:wifi-settings"
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiWifiTWTSwitch
@@ -1110,8 +960,6 @@ class HuaweiWifiTWTSwitch(HuaweiSwitch):
         """Initialize."""
 
         super().__init__(coordinator, Switch.WIFI_TWT, None)
-
-
 
         self._attr_name = _FUNCTION_DISPLAYED_NAME_WIFI_TWT
 
@@ -1133,10 +981,6 @@ class HuaweiWifiTWTSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:wifi-settings"
 
-
-
-
-
 # ---------------------------
 
 #   HuaweiWlanFilterSwitch
@@ -1150,8 +994,6 @@ class HuaweiWlanFilterSwitch(HuaweiSwitch):
         """Initialize."""
 
         super().__init__(coordinator, Switch.WLAN_FILTER, None)
-
-
 
         self._attr_name = _FUNCTION_DISPLAYED_NAME_WLAN_FILTER
 
@@ -1175,8 +1017,6 @@ class HuaweiWlanFilterSwitch(HuaweiSwitch):
 
         self._attr_entity_registry_enabled_default = False
 
-
-
     async def _go_to_state(self, state: bool):
 
         """Perform transition to the specified state."""
@@ -1184,10 +1024,6 @@ class HuaweiWlanFilterSwitch(HuaweiSwitch):
         await super()._go_to_state(state)
 
         self.coordinator.async_update_listeners()
-
-
-
-
 
 # ---------------------------
 
@@ -1202,8 +1038,6 @@ class HuaweiGuestNetworkSwitch(HuaweiSwitch):
         """Initialize."""
 
         super().__init__(coordinator, Switch.GUEST_NETWORK, None)
-
-
 
         self._attr_name = _FUNCTION_DISPLAYED_NAME_GUEST_NETWORK
 
@@ -1227,8 +1061,6 @@ class HuaweiGuestNetworkSwitch(HuaweiSwitch):
 
         self._attr_entity_registry_enabled_default = True
 
-
-
     async def _go_to_state(self, state: bool):
 
         """Perform transition to the specified state."""
@@ -1236,10 +1068,6 @@ class HuaweiGuestNetworkSwitch(HuaweiSwitch):
         await super()._go_to_state(state)
 
         self.coordinator.async_update_listeners()
-
-
-
-
 
 # ---------------------------
 
@@ -1263,9 +1091,6 @@ class HuaweiDeviceAccessSwitch(HuaweiSwitch):
 
         super().__init__(coordinator, EmulatedSwitch.DEVICE_ACCESS, device.mac)
 
-
-
-
         self._attr_name = f"{_FUNCTION_DISPLAYED_NAME_DEVICE_ACCESS}: {device.name}"
 
         self._attr_unique_id = generate_entity_unique_id(
@@ -1288,8 +1113,6 @@ class HuaweiDeviceAccessSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:account-lock"
 
-
-
     @property
 
     def available(self) -> bool:
@@ -1301,10 +1124,6 @@ class HuaweiDeviceAccessSwitch(HuaweiSwitch):
             return False
 
         return self.coordinator.is_router_online() and self.is_on is not None
-
-
-
-
 
 # ---------------------------
 
@@ -1338,11 +1157,7 @@ class HuaweiUrlFilterSwitch(HuaweiSwitch):
 
         self._attr_device_info = None
 
-
-
         self._attr_name = f"{_FUNCTION_DISPLAYED_NAME_URL_FILTER}: {filter_info.url}"
-
-
 
         self._attr_unique_id = generate_entity_unique_id(
 
@@ -1364,15 +1179,11 @@ class HuaweiUrlFilterSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:link-lock"
 
-
-
     @callback
 
     def _handle_coordinator_update(self) -> None:
 
         """Handle updated data from the coordinator."""
-
-
 
         debug_data = (
 
@@ -1382,19 +1193,13 @@ class HuaweiUrlFilterSwitch(HuaweiSwitch):
 
         )
 
-
-
         _LOGGER.debug("Switch %s: info is %s", self._switch_id, debug_data)
-
-
 
         self._attr_name = (
 
             f"{_FUNCTION_DISPLAYED_NAME_URL_FILTER}: {self._filter_info.url}"
 
         )
-
-
 
         self._attr_extra_state_attributes["url"] = self._filter_info.url
 
@@ -1404,11 +1209,7 @@ class HuaweiUrlFilterSwitch(HuaweiSwitch):
 
         )
 
-
-
         super()._handle_coordinator_update()
-
-
 
     @property
 
@@ -1417,10 +1218,6 @@ class HuaweiUrlFilterSwitch(HuaweiSwitch):
         """Return if entity is available."""
 
         return self.coordinator.is_router_online() and self.is_on is not None
-
-
-
-
 
 # ---------------------------
 
@@ -1454,15 +1251,11 @@ class HuaweiPortMappingSwitch(HuaweiSwitch):
 
         self._attr_device_info = coordinator.get_device_info()
 
-
-
         self._attr_name = (
 
             f"{_FUNCTION_DISPLAYED_NAME_PORT_MAPPING}: {port_mapping.name}"
 
         )
-
-
 
         self._attr_unique_id = generate_entity_unique_id(
 
@@ -1484,23 +1277,15 @@ class HuaweiPortMappingSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:upload-network-outline"
 
-
-
     @callback
 
     def _handle_coordinator_update(self) -> None:
 
         """Handle updated data from the coordinator."""
 
-
-
         debug_data = f"Id: {self._port_mapping.id}, name: {self._port_mapping.name}, enabled: {self._port_mapping.enabled}"
 
-
-
         _LOGGER.debug("Switch %s: info is %s", self._switch_id, debug_data)
-
-
 
         self._attr_name = (
 
@@ -1508,19 +1293,13 @@ class HuaweiPortMappingSwitch(HuaweiSwitch):
 
         )
 
-
-
         self._attr_extra_state_attributes["host_name"] = self._port_mapping.host_name
 
         self._attr_extra_state_attributes["host_ip"] = self._port_mapping.host_ip
 
         self._attr_extra_state_attributes["host_mac"] = self._port_mapping.host_mac
 
-
-
         super()._handle_coordinator_update()
-
-
 
     @property
 
@@ -1529,10 +1308,6 @@ class HuaweiPortMappingSwitch(HuaweiSwitch):
         """Return if entity is available."""
 
         return self.coordinator.is_router_online() and self.is_on is not None
-
-
-
-
 
 # ---------------------------
 
@@ -1566,15 +1341,11 @@ class HuaweiTimeControlSwitch(HuaweiSwitch):
 
         self._attr_device_info = None
 
-
-
         self._attr_name = (
 
             f"{_FUNCTION_DISPLAYED_NAME_TIME_CONTROL}: {time_control.name}"
 
         )
-
-
 
         self._attr_unique_id = generate_entity_unique_id(
 
@@ -1596,31 +1367,21 @@ class HuaweiTimeControlSwitch(HuaweiSwitch):
 
         self._attr_icon = "mdi:timer-lock-outline"
 
-
-
     @callback
 
     def _handle_coordinator_update(self) -> None:
 
         """Handle updated data from the coordinator."""
 
-
-
         debug_data = f"Id: {self._time_control.id}, name: {self._time_control.name}, enabled: {self._time_control.enabled}"
 
-
-
         _LOGGER.debug("Switch %s: info is %s", self._switch_id, debug_data)
-
-
 
         self._attr_name = (
 
             f"{_FUNCTION_DISPLAYED_NAME_TIME_CONTROL}: {self._time_control.name}"
 
         )
-
-
 
         for day in self._time_control.days.values():
 
@@ -1641,8 +1402,6 @@ class HuaweiTimeControlSwitch(HuaweiSwitch):
                 else {"is_enabled": day.is_enabled}
 
             )
-
-
 
         if self.coordinator.connected_devices:
 
@@ -1668,11 +1427,7 @@ class HuaweiTimeControlSwitch(HuaweiSwitch):
 
                     device_index += 1
 
-
-
         super()._handle_coordinator_update()
-
-
 
     @property
 
