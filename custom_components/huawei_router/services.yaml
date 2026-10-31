@@ -1153,14 +1153,16 @@ diagnostics_devlist:
 diagnostics_download:
   name: 下载诊断日志
   description: >
-    将收集完成的诊断日志包下载到 HA 可访问的本地路径
+    将收集完成的诊断日志包下载到 HA 的 /config/www 目录
     （如 /config/www/huawei_diag.tar，之后可通过 /local/huawei_diag.tar 访问）。
+    出于安全考虑仅允许写入 /config/www：传文件名即自动保存到该目录，
+    传其它目录路径会被拒绝。
   fields:
     path:
       name: 保存路径
-      description: 完整文件路径（含文件名）。
+      description: 文件名（自动保存到 /config/www/）或 /config/www/ 下的完整路径。
       required: true
-      example: "/config/www/huawei_diag.tar"
+      example: "huawei_diag.tar"
       selector:
         text:
 wps_pair_start:
@@ -1201,14 +1203,16 @@ wps_pair_start:
 config_export:
   name: 导出路由器配置
   description: >
-    下载路由器配置备份（.conf 加密包，与 Web UI「导出配置」完全一致）到本地路径。
-    建议在每次改动路由器设置前先导出备份。
+    下载路由器配置备份（.conf 加密包，与 Web UI「导出配置」完全一致）到
+    /config/www 目录。建议在每次改动路由器设置前先导出备份。
+    出于安全考虑仅允许写入 /config/www：传文件名即自动保存到该目录，
+    传其它目录路径会被拒绝。
   fields:
     path:
       name: 保存路径
-      description: 完整文件路径（含 .conf 文件名）。
+      description: 文件名（自动保存到 /config/www/）或 /config/www/ 下的完整路径。
       required: true
-      example: "/config/www/q6_config_backup.conf"
+      example: "q6_config_backup.conf"
       selector:
         text:
 config_import:
@@ -1220,9 +1224,9 @@ config_import:
   fields:
     path:
       name: 配置文件路径
-      description: 之前导出的 .conf 文件完整路径。
+      description: 之前导出的 .conf 文件名（位于 /config/www/）或该目录下的完整路径。
       required: true
-      example: "/config/www/q6_config_backup.conf"
+      example: "q6_config_backup.conf"
       selector:
         text:
     wait_restart:

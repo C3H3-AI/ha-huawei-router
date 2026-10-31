@@ -323,6 +323,25 @@ class InvalidActionError(Exception):
         return self._message
 
 
+def _confined_path(file_name: str, allowed_dir: str | None) -> str:
+    """把文件名收口到 ``allowed_dir`` 下，杜绝路径穿越。
+
+    传入值只取 basename 作文件名（丢弃任何目录分量与 ``..``），
+    目标路径 = realpath(allowed_dir) + basename，写入/读取范围结构性受限于
+    允许目录。服务层固定传 HA 的 ``/config/www``。
+    """
+    import os
+
+    from pathlib import Path
+
+    if not allowed_dir:
+        raise InvalidActionError("缺少 allowed_dir（服务层应传 /config/www）")
+    name = os.path.basename(str(file_name or "").replace("\\", "/"))
+    if not name or set(name) == {"."}:
+        raise InvalidActionError(f"文件名不合法: {file_name!r}")
+    return Path(os.path.realpath(allowed_dir)) / name
+
+
 
 
 
@@ -2571,7 +2590,9 @@ class HuaweiApi:
             URL_DIAGNOSTICS, payload, extra_data={"action": "update"}
         )
 
-    async def diagnostics_download(self, file_path: str) -> dict[str, Any]:
+    async def diagnostics_download(
+        self, file_name: str, allowed_dir: str
+    ) -> dict[str, Any]:
         """Download the collected diagnostics package to a local file.
 
         Verified against a real Q6 网线版: the endpoint returns
@@ -2580,15 +2601,19 @@ class HuaweiApi:
         ``_get_raw`` — no separate login, so it cannot trip the router's
         2-session rate limit.
 
+        写入位置收口：仅落 ``allowed_dir``（服务层固定传 /config/www），
+        传入值只取 basename 作文件名，杜绝路径穿越。
+
         Returns {"path": ..., "size": ...}.
         """
         import os
 
-        if not file_path or os.path.isdir(file_path):
+        target = _confined_path(file_name, allowed_dir)
+        if os.path.isdir(target):
             raise InvalidActionError(
-                f"diagnostics_download 需要一个完整文件路径（含文件名），收到: {file_path}"
+                f"diagnostics_download 目标是目录: {target}"
             )
-        parent = os.path.dirname(os.path.abspath(file_path))
+        parent = os.path.dirname(target)
         if parent and not os.path.isdir(parent):
             raise InvalidActionError(f"目标目录不存在: {parent}")
 
@@ -2600,17 +2625,19 @@ class HuaweiApi:
                 APICALL_ERRCAT_REQUEST,
             )
         total = 0
-        with open(file_path, "wb") as fh:
+        with target.open("wb") as fh:
             while chunk := await response.content.read(65536):
                 fh.write(chunk)
                 total += len(chunk)
-        return {"path": file_path, "size": total}
+        return {"path": str(target), "size": total}
 
     # ---------------------------
     #   配置导出 / 导入（reset 页，真机已验证导出）
     # ---------------------------
 
-    async def config_export(self, file_path: str) -> dict[str, Any]:
+    async def config_export(
+        self, file_name: str, allowed_dir: str
+    ) -> dict[str, Any]:
         """Download the router configuration backup to a local file.
 
         Verified against a real Q6 网线版: GET ``/api/system/downloadcfg``
@@ -2619,16 +2646,15 @@ class HuaweiApi:
         The payload is an encrypted binary blob (~86 KB on this unit) — it is
         the exact file the Web UI "导出配置" saves and the only format
         ``config_import`` accepts. Uses the live authenticated session.
+
+        写入位置收口：仅落 ``allowed_dir``（服务层固定传 /config/www），
+        传入值只取 basename 作文件名，杜绝路径穿越。
         """
         import os
 
-        if not file_path or os.path.isdir(file_path):
-            raise InvalidActionError(
-                f"config_export 需要一个完整文件路径（含文件名），收到: {file_path}"
-            )
-        parent = os.path.dirname(os.path.abspath(file_path))
-        if parent and not os.path.isdir(parent):
-            raise InvalidActionError(f"目标目录不存在: {parent}")
+        target = _confined_path(file_name, allowed_dir)
+        if os.path.isdir(target):
+            raise InvalidActionError(f"config_export 目标是目录: {target}")
 
         response = await self._core_api._get_raw("api/system/downloadcfg")
         if response.status != 200:
@@ -2639,10 +2665,10 @@ class HuaweiApi:
             )
         disposition = response.headers.get("Content-Disposition", "")
         data = await response.read()
-        with open(file_path, "wb") as fh:
+        with target.open("wb") as fh:
             fh.write(data)
         return {
-            "path": file_path,
+            "path": str(target),
             "size": len(data),
             "server_filename": (
                 disposition.split("filename=")[-1].strip('"') if disposition else None
@@ -2650,12 +2676,18 @@ class HuaweiApi:
         }
 
     async def config_import(
-        self, file_path: str, wait_restart: bool = False
+        self,
+        file_name: str,
+        wait_restart: bool = False,
+        allowed_dir: str | None = None,
     ) -> dict[str, Any]:
         """Upload a previously exported ``.conf`` backup to the router.
 
         ⚠️⚠️ 破坏性操作：路由器会用该配置覆盖当前全部设置并自动重启（约 60 秒），
         期间整屋断网。前端强制 .conf 扩展名。
+
+        读取位置收口：与 config_export 一致，仅允许 ``allowed_dir`` 下的文件，
+        传入值只取 basename 作文件名，杜绝路径穿越。
 
         Reverse-engineered from Web UI reset page (chunk 34) + common Upload
         component (chunk 0):
@@ -2667,9 +2699,10 @@ class HuaweiApi:
         """
         import os
 
-        if not file_path or not os.path.isfile(file_path):
-            raise InvalidActionError(f"配置文件不存在: {file_path}")
-        if not file_path.lower().endswith(".conf"):
+        target = _confined_path(file_name, allowed_dir)
+        if not os.path.isfile(target):
+            raise InvalidActionError(f"配置文件不存在: {target}")
+        if not target.lower().endswith(".conf"):
             raise InvalidActionError("配置文件必须是 .conf（与 Web UI 导出格式一致）")
 
         # multipart 组装：csrf_token 字段是 "csrf:" + param + token 拼接
@@ -2679,11 +2712,11 @@ class HuaweiApi:
         )
         form = aiohttp.FormData()
         form.add_field("csrf_token", csrf_value)
-        form.add_field("textfield", os.path.basename(file_path))
+        form.add_field("textfield", os.path.basename(target))
         form.add_field(
             "configurefilename",
-            open(file_path, "rb"),
-            filename=os.path.basename(file_path),
+            open(target, "rb"),
+            filename=os.path.basename(target),
             content_type="application/octet-stream",
         )
 
@@ -2691,7 +2724,7 @@ class HuaweiApi:
 
         logging.getLogger(__name__).warning(
             "配置导入已发起（%s）——路由器将覆盖全部设置并重启，约 60 秒",
-            file_path,
+            target,
         )
         # multipart POST 需绕过 core 的 JSON dto 封装，直接用已认证 session
         await self._core_api._ensure_initialized()

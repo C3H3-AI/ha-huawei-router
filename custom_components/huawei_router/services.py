@@ -2385,13 +2385,17 @@ async def _async_diagnostics_devlist(hass: HomeAssistant, service: ServiceCall):
 
 
 async def _async_diagnostics_download(hass: HomeAssistant, service: ServiceCall):
-    """Download the diagnostics package into the HA config directory."""
-    path = service.data["path"]
+    """Download the diagnostics package into the HA config directory.
+
+    path 只取文件名，写入位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
-        return await coordinator.primary_router_api.diagnostics_download(path)
+        return await coordinator.primary_router_api.diagnostics_download(
+            service.data["path"], allowed_dir=hass.config.path("www")
+        )
     except HomeAssistantError:
         raise
     except Exception as ex:
@@ -2422,27 +2426,35 @@ async def _async_wps_pair_start(hass: HomeAssistant, service: ServiceCall):
 
 
 async def _async_config_export(hass: HomeAssistant, service: ServiceCall):
-    """Export the router configuration backup to a local file (真机验证 ✅)."""
-    path = service.data["path"]
+    """Export the router configuration backup to a local file (真机验证 ✅).
+
+    path 只取文件名，写入位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
-        return await coordinator.primary_router_api.config_export(path)
+        return await coordinator.primary_router_api.config_export(
+            service.data["path"], allowed_dir=hass.config.path("www")
+        )
     except Exception as ex:
         raise HomeAssistantError(f"导出配置失败: {ex}")
 
 
 async def _async_config_import(hass: HomeAssistant, service: ServiceCall):
-    """⚠️ 破坏性：上传配置备份，路由器覆盖全部设置并重启。"""
-    path = service.data["path"]
+    """⚠️ 破坏性：上传配置备份，路由器覆盖全部设置并重启。
+
+    path 只取文件名，读取位置固定收口在 /config/www（客户端层再校验一次）。
+    """
     wait_restart = service.data.get("wait_restart", False)
     coordinator = _find_any_coordinator(hass)
     if not coordinator:
         raise HomeAssistantError("Can not find any Huawei router coordinator")
     try:
         return await coordinator.primary_router_api.config_import(
-            path, wait_restart=wait_restart
+            service.data["path"],
+            wait_restart=wait_restart,
+            allowed_dir=hass.config.path("www"),
         )
     except HomeAssistantError:
         raise
