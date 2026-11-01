@@ -505,7 +505,7 @@ api_get:
             - "xlink_lock_net"
 api_set:
   name: 通用 API 写入
-  description: 对白名单中的任意真实 API 端点执行原始 POST，data 作为请求体，action 可选。
+  description: '对白名单中的任意真实 API 端点执行原始 POST，data 作为请求体，action 可选。返回 {"status": ..., "data": <路由器响应>}（需在支持服务响应的界面查看）。'
   fields:
     endpoint:
       name: 端点
