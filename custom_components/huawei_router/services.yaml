@@ -420,6 +420,7 @@ api_get:
       selector:
         select:
           options:
+            - "HostInfo"
             - "MultiHostInfo"
             - "RepeaterDial"
             - "RepeaterDial_scram"
