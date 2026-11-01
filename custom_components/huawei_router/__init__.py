@@ -3,7 +3,7 @@
 import logging
 from typing import Iterable
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation
@@ -103,6 +103,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         hass, config_entry, integration_options, tags_store, zones_store
     )
     await coordinator.async_config_entry_first_refresh()
+
+    # 路由信息（serial）是所有路由器级实体 uid 的后缀。首次刷新里
+    # _update_router_infos 的失败会被静默吞掉，若 serial 不可得就继续
+    # setup，uid 会兜底成 "_unknown" 再生成一整套重复实体（两台实例
+    # 实测各 31 个）。此处改为就绪门控：拿不到 serial 就让 HA 带退避
+    # 重试整个 setup，uid 永远走 serial。
+    if coordinator.get_router_info(None) is None:
+        raise ConfigEntryNotReady(
+            "路由器信息未就绪（serial 不可得），稍后自动重试"
+        )
 
     config_entry.async_on_unload(config_entry.add_update_listener(update_listener))
 
