@@ -12,7 +12,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 
 from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 
@@ -2631,6 +2631,9 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
 
     for item in SERVICES:
 
+        # supports_response=OPTIONAL：api_get / *_list / *_state 等查询服务的
+        # 返回值从此对调用方可见（开发者工具结果面板、自动化 response_variable），
+        # 动作类服务不受影响。此前默认 NONE，所有返回值被 HA 静默丢弃。
         hass.services.async_register(
 
             domain=DOMAIN,
@@ -2640,6 +2643,8 @@ async def async_setup_services(hass: HomeAssistant, config_entry: ConfigEntry) -
             service_func=async_call_service,
 
             schema=item.schema,
+
+            supports_response=SupportsResponse.OPTIONAL,
 
         )
 
