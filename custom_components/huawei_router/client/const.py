@@ -134,6 +134,7 @@ URL_SYSTEM_MODE: Final = "api/system/wlanmode"
 #      等），其中 reboot 已有专用实现。
 # ---------------------------------------------------------------------------
 RAW_API_ENDPOINTS: Final = {
+    "HostInfo": "api/system/HostInfo",
     "MultiHostInfo": "api/system/MultiHostInfo",
     "RepeaterDial": "api/ntwk/RepeaterDial",
     "RepeaterDial_scram": "api/ntwk/RepeaterDial_scram",
